@@ -63,7 +63,7 @@ app = FastAPI(title="User Authentication API")
 # Add CORS middleware with specific settings
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000","http://34.123.69.231:3000"],  # Add your frontend URL
+    allow_origins=["http://localhost:5173", "http://localhost:3000","http://34.123.69.231"],  # Add your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
