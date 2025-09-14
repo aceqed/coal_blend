@@ -113,7 +113,7 @@ function VendorDataUpload() {
 
   const fetchCoals = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/vendor_coals", {
+      const res = await axios.get("http://34.123.69.231:8000/api/vendor_coals", {
         withCredentials: true,
       });
       setCoalList(res.data["data"] || []);
@@ -139,7 +139,7 @@ function VendorDataUpload() {
     setIsLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/vendor-coal/manual",
+        "http://34.123.69.231:8000/api/vendor-coal/manual",
         formData, // send as JSON
         {
           headers: { "Content-Type": "application/json" },
@@ -164,7 +164,7 @@ function VendorDataUpload() {
   const handleApprove = async (coal_id) => {
     try {
       await axios.post(
-        `http://localhost:8000/api/vendor_coals/${coal_id}/approve/`,
+        `http://34.123.69.231:8000/api/vendor_coals/${coal_id}/approve/`,
         { withCredentials: true }
       );
       setMessage({
@@ -181,7 +181,7 @@ function VendorDataUpload() {
   const handleUpdate = async () => {
     try {
       await axios.patch(
-        `http://localhost:8000/api/vendor_coals/${selectedCoal.id}`,
+        `http://34.123.69.231:8000/api/vendor_coals/${selectedCoal.id}`,
         selectedCoal,
         { withCredentials: true }
       );
@@ -316,7 +316,7 @@ function VendorDataUpload() {
                       const formData = new FormData();
                       formData.append("file", file);
                       const res = await fetch(
-                        "http://localhost:8000/api/coal/upload",
+                        "http://34.123.69.231:8000/api/coal/upload",
                         { method: "POST", body: formData , credentials: 'include' }
                       );
                       const result = await res.json();
