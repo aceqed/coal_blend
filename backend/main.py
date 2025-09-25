@@ -463,15 +463,15 @@ async def predict_blend(
             "CSR": predicted_targets.get("CSR", 0.0),
             "ASH": predicted_targets.get("ASH", 0.0),
             "VM": predicted_targets.get("VM", 0.0),
-            # "N": (enhanced_blend_properties.get("weighted_N", 0.0)*100) * 0.1,
-            # "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 )* 0.85,
-            # "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100) * 0.9,
-            # "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100)
+            "N": (enhanced_blend_properties.get("weighted_N", 0.0)*100) * 0.1,
+            "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 )* 0.85,
+            "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100) * 0.9,
+            "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100)
         }
         
-        # logger.info("=== Inference Engine Prediction completed successfully ===")
-        # logger.info(f"Predicted targets: {predicted_targets}")
-        # logger.info(f"Emissions: {emissions}")
+        logger.info("=== Inference Engine Prediction completed successfully ===")
+        logger.info(f"Predicted targets: {predicted_targets}")
+        logger.info(f"Emissions: {emissions}")
 
         # Create response using the schema
         response = schemas.PredictionOutput(
