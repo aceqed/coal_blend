@@ -542,7 +542,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                         </div>
 
                         {/* Split Layout: Coal Composition (Left) + Emissions (Right) */}
-                        <div className="grid grid-cols-1 lg:grid-cols-1 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
                           {/* Left Half: Coal Composition with Colors */}
                           <div className="p-4">
                             <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
