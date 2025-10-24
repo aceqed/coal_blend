@@ -376,7 +376,7 @@ async def predict_blend(
     db: Session = Depends(get_db),
     # current_user: models.User = Depends(auth.get_current_user)
 ):
-    try:
+    
         # logger.info(f"Processing prediction request for user: {current_user.email}")
         logger.info(f"Input blends: {prediction_input.blends}")
         
@@ -400,34 +400,8 @@ async def predict_blend(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Coal properties not found for: {blend.coal_name}"
                 )
-            
             coal_properties[blend.coal_name] = coal
-            logger.info(f"\nCoal Properties for {blend.coal_name} ({blend.percentage}%):")
-            logger.info(f"IM: {coal.IM}")
-            logger.info(f"Ash: {coal.Ash}")
-            logger.info(f"VM: {coal.VM}")
-            logger.info(f"FC: {coal.FC}")
-            logger.info(f"S: {coal.S}")
-            logger.info(f"P: {coal.P}")
-            logger.info(f"SiO2: {coal.SiO2}")
-            logger.info(f"Al2O3: {coal.Al2O3}")
-            logger.info(f"Fe2O3: {coal.Fe2O3}")
-            logger.info(f"CaO: {coal.CaO}")
-            logger.info(f"MgO: {coal.MgO}")
-            logger.info(f"Na2O: {coal.Na2O}")
-            logger.info(f"K2O: {coal.K2O}")
-            logger.info(f"TiO2: {coal.TiO2}")
-            logger.info(f"Mn3O4: {coal.Mn3O4}")
-            logger.info(f"SO3: {coal.SO3}")
-            logger.info(f"P2O5: {coal.P2O5}")
-            logger.info(f"BaO: {coal.BaO}")
-            logger.info(f"SrO: {coal.SrO}")
-            logger.info(f"ZnO: {coal.ZnO}")
-            logger.info(f"CRI: {coal.CRI}")
-            logger.info(f"CSR: {coal.CSR}")
-            logger.info(f"N:{coal.N}")
-            logger.info(f"HGI: {coal.HGI}")
-            logger.info(f"Coal Category: {coal.coal_category}")
+
 
         # ========================================
         # Use the inference engine for complete prediction
@@ -455,7 +429,11 @@ async def predict_blend(
             "ASH": enhanced_blend_properties.get("ASH", 0.0)/100,
             "VM": enhanced_blend_properties.get("VM", 0.0)/100,
             "FC": enhanced_blend_properties.get("weighted_F.C")/100,
-            "CSN": enhanced_blend_properties.get("weighted_CSN/FSI")/100  # Not predicted in current model
+            "CSN": enhanced_blend_properties.get("weighted_CSN/FSI")/100,  # Not predicted in current model
+            "N": (enhanced_blend_properties.get("weighted_N", 0.0)*100) * 0.1,
+            "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 )* 0.85,
+            "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100) * 0.9,
+            "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100)
         }
         
         predicted_coke_properties = {
@@ -463,10 +441,7 @@ async def predict_blend(
             "CSR": predicted_targets.get("CSR", 0.0),
             "ASH": predicted_targets.get("ASH", 0.0),
             "VM": predicted_targets.get("VM", 0.0),
-            "N": (enhanced_blend_properties.get("weighted_N", 0.0)*100) * 0.1,
-            "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 )* 0.85,
-            "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100) * 0.9,
-            "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100)
+
         }
         
         logger.info("=== Inference Engine Prediction completed successfully ===")
@@ -482,12 +457,6 @@ async def predict_blend(
         
         return response
         
-    except Exception as e:
-        logger.error(f"Error in predict_blend: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred during prediction: {str(e)}"
-        )
 
 @app.get("/verify-token")
 async def verify_token(current_user: models.User = Depends(auth.get_current_user)):
