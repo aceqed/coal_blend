@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Search, Plus, MoreVertical, Eye, Loader } from "lucide-react";
 import RecommendationsView from "./RecommendationsView.jsx";
 import CreateSimulation from "./CreateSimulation.jsx";
-import axios from "axios";
+import api from "../services/api";
 // import { Card, Button, Dropdown } from "react-bootstrap";
 
 // when we click on the create new simulation then we can put Scenarios name and scenarios description , Scenarios date and after that we have 3
@@ -57,9 +57,7 @@ const SimulationManager = () => {
   // Function to fetch simulations
   const fetchSimulations = async () => {
     try {
-      const response = await axios.get("http://35.225.143.100:8000/simulations", {
-        withCredentials: true,
-      });
+      const response = await api.get("/simulations");
       const newSimulations = response.data;
 
       // Update simulations while preserving running status
@@ -104,9 +102,8 @@ const SimulationManager = () => {
     // Function to fetch multiple simulations in a single request
     const fetchBatchSimulations = async (ids) => {
       try {
-        const response = await axios.get(
-          `http://35.225.143.100:8000/simulations/batch?simulation_ids=${Array.from(ids).join(",")}`,
-          { withCredentials: true }
+        const response = await api.get(
+          `/simulations/batch?simulation_ids=${Array.from(ids).join(",")}`
         );
 
         const updatedSimulations = response.data;
@@ -255,9 +252,7 @@ const SimulationManager = () => {
 
     try {
       // Fetch detailed simulation data including recommendations and emission data
-      const response = await axios.get(`http://35.225.143.100:8000/simulation/${scenario.id}`, {
-        withCredentials: true,
-      });
+      const response = await api.get(`/simulation/${scenario.id}`);
 
       console.log("Detailed simulation data:", response.data); // Debug log
       setSelectedScenario(response.data); // Use detailed data instead of basic scenario
@@ -287,12 +282,9 @@ const SimulationManager = () => {
     try {
       console.log(`Attempting to stop simulation ${simulationId}`); // Debug log
 
-      const response = await axios.post(
-        `http://35.225.143.100:8000/simulation/${simulationId}/stop`,
-        {},
-        {
-          withCredentials: true,
-        }
+      const response = await api.post(
+        `/simulation/${simulationId}/stop`,
+        {}
       );
 
       console.log(`Stop simulation response:`, response.data); // Debug log

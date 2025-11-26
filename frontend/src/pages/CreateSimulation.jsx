@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { ArrowLeft, Plus, Trash2, Save, Loader } from "lucide-react";
-import axios from "axios";
+import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 const CreateSimulation = ({ onBack }) => {
@@ -227,9 +227,7 @@ const CreateSimulation = ({ onBack }) => {
       console.log("Sending simulation data:", simulationData); // Debug log
 
       // Step 1: Create the simulation record
-      const createResponse = await axios.post("http://35.225.143.100:8000/simulation", simulationData, {
-        withCredentials: true,
-      });
+      const createResponse = await api.post("/simulation", simulationData);
 
       console.log("Received create response:", createResponse.data); // Debug log
 
@@ -238,12 +236,9 @@ const CreateSimulation = ({ onBack }) => {
       }
 
       // Step 2: Start the optimization process
-      const startResponse = await axios.post(
-        `http://35.225.143.100:8000/simulation/${createResponse.data.id}/start`,
-        simulationData,
-        {
-          withCredentials: true,
-        }
+      const startResponse = await api.post(
+        `/simulation/${createResponse.data.id}/start`,
+        simulationData
       );
 
       console.log("Received start response:", startResponse.data); // Debug log

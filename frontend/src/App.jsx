@@ -1,13 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { Suspense, lazy, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
+import api from "./services/api";
 import ProtectedRoute from "./shared/ProtectedRoute.jsx"; // Rename to ProtectRoute if needed
 import { userExits, userNotExits } from "./Redux/authSlice"; // update this path as needed
-
-// Configure axios defaults
-axios.defaults.baseURL = "http://35.225.143.100:8000"; // Update with your backend URL // here update with local->backend
-axios.defaults.withCredentials = true; // Important for cookies
 
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
@@ -34,7 +30,7 @@ const App = () => {
     const checkAuth = async () => {
   //        
       try {
-        const { data } = await axios.get("/users/me");
+        const { data } = await api.get("/users/me");
         console.log(data);
         dispatch(userExits(data));
       } catch (error) {

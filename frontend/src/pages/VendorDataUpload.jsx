@@ -9,7 +9,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 // Updated fields to match backend `VendorCoalBase` / `CoalProperties`
 const COAL_PROPERTIES = [
@@ -113,9 +113,7 @@ function VendorDataUpload() {
 
   const fetchCoals = async () => {
     try {
-      const res = await axios.get("http://35.225.143.100:8000/api/vendor_coals", {
-        withCredentials: true,
-      });
+      const res = await api.get("/api/vendor_coals");
       setCoalList(res.data["data"] || []);
     } catch (err) {
       console.error("Error fetching coals:", err);
@@ -138,13 +136,9 @@ function VendorDataUpload() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        "http://35.225.143.100:8000/api/vendor-coal/manual",
-        formData, // send as JSON
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
+      const response = await api.post(
+        "/api/vendor-coal/manual",
+        formData
       );
 
       if (response.data) {
@@ -163,9 +157,8 @@ function VendorDataUpload() {
 
   const handleApprove = async (coal_id) => {
     try {
-      await axios.post(
-        `http://35.225.143.100:8000/api/vendor_coals/${coal_id}/approve/`,
-        { withCredentials: true }
+      await api.post(
+        `/api/vendor_coals/${coal_id}/approve/`
       );
       setMessage({
         type: "success",
@@ -180,10 +173,9 @@ function VendorDataUpload() {
 
   const handleUpdate = async () => {
     try {
-      await axios.patch(
-        `http://35.225.143.100:8000/api/vendor_coals/${selectedCoal.id}`,
-        selectedCoal,
-        { withCredentials: true }
+      await api.patch(
+        `/api/vendor_coals/${selectedCoal.id}`,
+        selectedCoal
       );
       setMessage({ type: "success", text: "Coal updated" });
       fetchCoals();
@@ -315,11 +307,16 @@ function VendorDataUpload() {
                     try {
                       const formData = new FormData();
                       formData.append("file", file);
-                      const res = await fetch(
-                        "http://35.225.143.100:8000/api/coal/upload",
-                        { method: "POST", body: formData , credentials: 'include' }
+                      const res = await api.post(
+                        "/api/coal/upload",
+                        formData,
+                        {
+                          headers: {
+                            "Content-Type": "multipart/form-data",
+                          },
+                        }
                       );
-                      const result = await res.json();
+                      const result = res.data;
                       if (!result.success)
                         throw new Error(result.error || "Parse failed");
 

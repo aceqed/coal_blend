@@ -13,7 +13,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { logout } from "../Redux/authSlice";
-import axios from "axios";
+import api from "../services/api";
 
 function Dashboard() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -39,7 +39,7 @@ function Dashboard() {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/logout");
+      await api.post("/logout");
       dispatch(logout());
       navigate("/login");
     } catch (error) {

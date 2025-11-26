@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from "react-redux";
 import PageLayout from "../Layout/pageLayout.jsx";
 import { BarChart, Plus, X } from "lucide-react";
 import { logout } from "../Redux/authSlice";
-import axios from "axios";
+import api from "../services/api";
 
 function Prediction() {
   const navigate = useNavigate();
@@ -227,9 +227,7 @@ function Prediction() {
       };
 
       // Make the API call with credentials
-      const response = await axios.post("/predict", payload, {
-        withCredentials: true,
-      });
+      const response = await api.post("/predict", payload);
 
       // Update the results for the specific panel
       setPanels(

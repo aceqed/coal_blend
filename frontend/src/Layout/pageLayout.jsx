@@ -3,7 +3,7 @@ import { ChevronDown, Home, LogOut, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../Redux/authSlice";
-import axios from "axios";
+import api from "../services/api";
 
 function PageLayout({ title, children }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -34,7 +34,7 @@ function PageLayout({ title, children }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post("/logout");
+      await api.post("/logout");
       dispatch(logout());
       navigate("/login");
     } catch (error) {

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { userExits, userNotExits } from "../Redux/authSlice";
-import axios from "axios";
+import api from "../services/api";
 import vedantaLogo from "../assets/Vedanta-logo.jpg";
 
 
@@ -21,7 +21,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("/login", {
+      const response = await api.post("/login", {
         email,
         password,
       });

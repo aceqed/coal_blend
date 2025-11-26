@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Loader } from "lucide-react";
 
@@ -13,9 +13,7 @@ const Simulations = () => {
   // Function to fetch simulations
   const fetchSimulations = async () => {
     try {
-      const response = await axios.get("http://35.225.143.100:8000/simulations", {
-        withCredentials: true,
-      });
+      const response = await api.get("/simulations");
       setSimulations(response.data);
 
       // Check for running simulations
@@ -39,9 +37,7 @@ const Simulations = () => {
       try {
         const updatedSimulations = await Promise.all(
           Array.from(pollingSimulations).map(async (id) => {
-            const response = await axios.get(`http://35.225.143.100:8000/simulation/${id}`, {
-              withCredentials: true,
-            });
+            const response = await api.get(`/simulation/${id}`);
             return response.data;
           })
         );
