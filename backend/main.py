@@ -29,6 +29,8 @@ import auth
 from database import engine, get_db
 from inference_engine import CoalBlendInferenceEngine
 import json 
+from reco.CoalBlendPredictor import CoalBlendPredictor
+coal_blend_predictor = CoalBlendPredictor()
 load_dotenv()
 
 # Configure logging
@@ -376,8 +378,6 @@ async def predict_blend(
     db: Session = Depends(get_db),
     # current_user: models.User = Depends(auth.get_current_user)
 ):
-    
-        # logger.info(f"Processing prediction request for user: {current_user.email}")
         logger.info(f"Input blends: {prediction_input.blends}")
         
         # Validate total percentage equals 100
@@ -411,11 +411,13 @@ async def predict_blend(
         
         # Convert blend input to the format expected by inference engine
         blend_ratios = [{"coal_name": blend.coal_name, "percentage": blend.percentage} 
-                       for blend in prediction_input.blends]
+                            for blend in prediction_input.blends]
         
         # Run complete inference pipeline
         inference_results = inference_engine.run_inference(coal_properties, blend_ratios)
-        
+        input_data ={  blend.coal_name: blend.percentage for blend in prediction_input.blends }
+        coke_prediction=coal_blend_predictor.predict(input_data)
+        print("NEW PREDICTOR",coke_prediction)
         # Extract results
         # enhanced_blend_properties = inference_results["final_features"]
         # predicted_targets = inference_results["predicted_targets"]
@@ -437,10 +439,10 @@ async def predict_blend(
         }
         
         predicted_coke_properties = {
-            "CRI": predicted_targets.get("CRI", 0.0),
-            "CSR": predicted_targets.get("CSR", 0.0),
-            "ASH": predicted_targets.get("ASH", 0.0),
-            "VM": predicted_targets.get("VM", 0.0),
+            "CRI": coke_prediction.get("predictions",{}).get("CRI", 0.0),
+            "CSR": coke_prediction.get("predictions",{}).get("CSR", 0.0),
+            "ASH": coke_prediction.get("predictions",{}).get("ASH", 0.0),
+            "VM":  coke_prediction.get("predictions",{}).get("VM", 0.0),
 
         }
         
