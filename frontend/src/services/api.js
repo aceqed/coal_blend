@@ -29,8 +29,13 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Redirect to login on unauthorized
-      window.location.href = "/login";
+      // Prevent redirect loop if already on login page or checking auth status
+      if (
+        window.location.pathname !== "/login" &&
+        !error.config.url.includes("/users/me")
+      ) {
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);
