@@ -156,7 +156,7 @@ const SimulationManager = () => {
         }
         return runningSims;
       });
-    }, 30000); // Increased to 30 seconds since we're batching
+    }, 3000); // Increased to 30 seconds since we're batching
 
     return () => {
       console.log("Cleaning up polling interval");
