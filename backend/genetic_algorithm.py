@@ -353,9 +353,17 @@ class VectorizedGA:
             indices = np.where(mask > 0)[0]
             if len(indices) == 0: continue
             
+            # For categories with min=0 (like WC), include them ~70% of the time
+            if const['min'] == 0:
+                if random.random() > 0.7:  # Skip 30% of the time
+                    continue
+                effective_min = 1  # When included, ensure at least 1%
+            else:
+                effective_min = const['min']
+            
             k = random.randint(1, min(len(indices), const['max_count']))
             selected_indices = np.random.choice(indices, k, replace=False)
-            total_cat_ratio = random.randint(const['min'], const['max'])
+            total_cat_ratio = random.randint(effective_min, const['max'])
             
             ratios = np.random.dirichlet(np.ones(k)) * total_cat_ratio
             for idx, r in zip(selected_indices, ratios):
