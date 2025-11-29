@@ -21,6 +21,21 @@ def seed_coals():
     # Clean column names (strip whitespace)
     df.columns = df.columns.str.strip()
     
+    # Load cost data
+    print("Reading cost data...")
+    try:
+        cost_df = pd.read_csv("reco/coal_costs.csv")
+        cost_df.columns = cost_df.columns.str.strip()
+        # Create a dictionary mapping coal name to cost
+        cost_map = dict(zip(cost_df['Name_of_coal'].str.strip(), cost_df['Cost']))
+        print(f"Loaded cost data for {len(cost_map)} coals")
+    except FileNotFoundError:
+        print("Warning: coal_costs.csv not found. Costs will be set to 0.0")
+        cost_map = {}
+    except Exception as e:
+        print(f"Warning: Error reading cost data: {e}. Costs will be set to 0.0")
+        cost_map = {}
+    
     # Replace NaN with None (or 0.0 for floats if preferred, but SQLAlchemy handles None as NULL)
     # For this model, most fields are Floats. Let's replace NaN with 0.0 for safety in calculations, 
     # or None if we want to allow NULLs. The model definition doesn't specify nullable=False for most, 
@@ -29,10 +44,15 @@ def seed_coals():
 
     coals = []
     for _, row in df.iterrows():
+        coal_name = row.get('Name_of_coal')
+        # Get cost from cost_map, default to 0.0 if not found
+        coal_cost = cost_map.get(coal_name, 0.0)
+        
         coal = models.CoalProperties(
-            coal_name=row.get('Name_of_coal'),
+            coal_name=coal_name,
             coal_category=row.get('Coal Category'),
             Rank=row.get('Rank'),
+            cost=coal_cost,  # Add cost field
             
             # Proximate Analysis
             IM=0.0, # Not in CSV?

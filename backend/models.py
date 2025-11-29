@@ -74,6 +74,7 @@ class CoalProperties(Base):
     V17 = Column(Float)
     V18 = Column(Float)
     V19 = Column(Float)
+    cost = Column(Float)
     # Additional properties for CBI and Log Max Fluidity calculations
     Inertinite = Column(Float)
     Minerals = Column(Float)

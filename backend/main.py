@@ -299,9 +299,9 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
         "VM": enhanced_blend_properties.get("VM", 0.0)/100,
         "FC": enhanced_blend_properties.get("weighted_F.C")/100,
         "CSN": enhanced_blend_properties.get("weighted_CSN/FSI")/100,
-        "N": (enhanced_blend_properties.get("weighted_N", 0.0)*100) * 0.1,
-        "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 )* 0.85,
-        "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100) * 0.9,
+        "N": (enhanced_blend_properties.get("weighted_N", 0.0)/100),
+        "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 ),
+        "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100),
         "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100)
     }
     
@@ -477,7 +477,7 @@ async def run_optimization(simulation_id: int, simulation_data: dict, db: Sessio
                     penalty += np.maximum(0, targets['CSR']['min'] - preds["CSR"]) * targets['CSR']['weight']
                 if "ASH" in preds:
                     penalty += np.maximum(0, preds["ASH"] - targets['ASH']['max']) * targets['ASH']['weight']
-                return  penalty #+ costs
+                return  penalty + costs
 
             # Bind the new method to the instance
             predictor._vectorized_cost_function = types.MethodType(dynamic_cost_function, predictor)
@@ -525,14 +525,12 @@ async def run_optimization(simulation_id: int, simulation_data: dict, db: Sessio
                         w_props['FC'], w_props['Ash'], w_props['VM'], 
                         w_props['S'], w_props['N'], w_props['CRI'], w_props['CSR']
                     )
-                    print("EMISSIONS",emissions)
                 else:
                     # Use returned emissions if available in predictions dict
                     emissions = {k: preds.get(k, 0.0) for k in [
                         "CO2_Emissions", "CO_Emissions", "SO2_Emissions", "NO_Emissions", "NO2_Emissions",
                         "PM_Index", "PM10_Emissions", "PM25_Emissions", "VOC_Index", "VOC_Emissions", "PAH_Emissions"
                     ]}
-                    print("EMISSIONS",emissions)
 
                 rec = models.SimulationCoalRecommendations(
                     simulation_id=simulation_id,
