@@ -3,8 +3,32 @@
 import { ArrowLeft, Download, Filter, BarChart3 } from "lucide-react";
 import PageLayout from "../Layout/pageLayout";
 import { useRef } from "react";
+import React from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import "../animations.css";
+
+// Helper function to get color for each category
+const getCategoryColor = (category) => {
+  const colors = {
+    'HCC': '#10b981',      // emerald-500
+    'SHCC': '#06b6d4',     // cyan-500
+    'HFCC': '#8b5cf6',     // violet-500
+    'PCI': '#f59e0b',      // amber-500
+    'WC': '#ef4444',       // red-500
+    'Unknown': '#6b7280'   // gray-500
+  };
+  return colors[category] || '#6b7280';
+};
+
+// Helper function to adjust brightness
+const adjustBrightness = (color, amount) => {
+  const num = parseInt(color.replace("#",""), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+  return "#" + (0x1000000 + (r << 16) + (g << 8) + b).toString(16).slice(1);
+};
 
 const RecommendationsView = ({ simulation, onBack }) => {
   const pdfRef = useRef(null);
@@ -158,6 +182,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
       acc[key].coals.push({
         name: rec.coal_name,
         percentage: rec.percentage,
+        category: rec.coal_category || "Unknown",
       });
 
       console.log("Current state of grouped recommendations:", acc); // Debug log for the current state
@@ -488,7 +513,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                 Blend Recommendations
               </h2>
               <p className="text-xs text-gray-600 mt-1">
-                Coal compositions and emission analysis
+                Coal compositions and category distribution analysis
               </p>
             </div>
 
@@ -507,6 +532,9 @@ const RecommendationsView = ({ simulation, onBack }) => {
                       "bg-pink-500",
                       "bg-teal-500",
                     ];
+
+                    // State for hover effect
+                    const [hoveredCategory, setHoveredCategory] = React.useState(null);
 
                     return (
                       <div
@@ -574,7 +602,11 @@ const RecommendationsView = ({ simulation, onBack }) => {
                               {blend.coals.map((coal, coalIndex) => (
                                 <div
                                   key={coalIndex}
-                                  className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                                  className={`flex items-center justify-between p-2 bg-gray-50 rounded-md transition-all duration-200 ${
+                                    hoveredCategory && coal.category === hoveredCategory
+                                      ? 'ring-2 ring-green-500 bg-green-50 shadow-md'
+                                      : ''
+                                  }`}
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
@@ -587,6 +619,11 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                     <span className="text-sm font-medium text-gray-800 truncate">
                                       {coal.name}
                                     </span>
+                                    {hoveredCategory && coal.category === hoveredCategory && (
+                                      <span className="text-xs px-1.5 py-0.5 bg-green-600 text-white rounded-full font-semibold">
+                                        {coal.category}
+                                      </span>
+                                    )}
                                   </div>
                                   <span className="text-sm font-semibold text-gray-700">
                                     {coal.percentage}%
@@ -637,138 +674,107 @@ const RecommendationsView = ({ simulation, onBack }) => {
                             </div>
                           </div>
 
-                          {/* Right Half: Emissions */}
-                          <div className="p-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                              <div className="w-4 h-4 bg-gradient-to-r from-red-400 to-orange-400 rounded"></div>
-                              Emission Analysis
+                          {/* Right Half: Coal Category Distribution */}
+                          <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg">
+                            <h4 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                              <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse"></div>
+                              Coal Category Distribution
                             </h4>
 
-                            {/* Primary Emissions */}
-                            <div className="mb-4">
-                              <h5 className="text-xs font-medium text-gray-600 mb-2">
-                                Primary Emissions
-                              </h5>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-red-50 p-2 rounded border border-red-100">
-                                  <div className="text-xs text-red-600">
-                                    CO₂
-                                  </div>
-                                  <div className="text-sm font-bold text-red-800">
-                                    {blend.CO2_Emissions
-                                      ? blend.CO2_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                                <div className="bg-orange-50 p-2 rounded border border-orange-100">
-                                  <div className="text-xs text-orange-600">
-                                    CO
-                                  </div>
-                                  <div className="text-sm font-bold text-orange-800">
-                                    {blend.CO_Emissions
-                                      ? blend.CO_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                                <div className="bg-yellow-50 p-2 rounded border border-yellow-100">
-                                  <div className="text-xs text-yellow-600">
-                                    SO₂
-                                  </div>
-                                  <div className="text-sm font-bold text-yellow-800">
-                                    {blend.SO2_Emissions
-                                      ? blend.SO2_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                                <div className="bg-pink-50 p-2 rounded border border-pink-100">
-                                  <div className="text-xs text-pink-600">
-                                    NO₂
-                                  </div>
-                                  <div className="text-sm font-bold text-pink-800">
-                                    {blend.NO2_Emissions
-                                      ? blend.NO2_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Particulate Matter */}
-                            <div className="mb-4">
-                              <h5 className="text-xs font-medium text-gray-600 mb-2">
-                                Particulate Matter
-                              </h5>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className="bg-indigo-50 p-2 rounded border border-indigo-100">
-                                  <div className="text-xs text-indigo-600">
-                                    PM Index
-                                  </div>
-                                  <div className="text-sm font-bold text-indigo-800">
-                                    {blend.PM_index
-                                      ? blend.PM_index.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                                <div className="bg-cyan-50 p-2 rounded border border-cyan-100">
-                                  <div className="text-xs text-cyan-600">
-                                    PM10
-                                  </div>
-                                  <div className="text-sm font-bold text-cyan-800">
-                                    {blend.PM10_Emissions
-                                      ? blend.PM10_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                                <div className="bg-teal-50 p-2 rounded border border-teal-100">
-                                  <div className="text-xs text-teal-600">
-                                    PM2.5
-                                  </div>
-                                  <div className="text-sm font-bold text-teal-800">
-                                    {blend.PM25_Emissions
-                                      ? blend.PM25_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                            {/* Calculate category distribution */}
+                            {(() => {
+                              const categoryDist = {};
+                              let total = 0;
+                              blend.coals.forEach((coal) => {
+                                const cat = coal.category || "Unknown";
+                                categoryDist[cat] = (categoryDist[cat] || 0) + coal.percentage;
+                                total += coal.percentage;
+                              });
 
-                            {/* VOC & PAH */}
-                            <div>
-                              <h5 className="text-xs font-medium text-gray-600 mb-2">
-                                Organic Compounds
-                              </h5>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className="bg-emerald-50 p-2 rounded border border-emerald-100">
-                                  <div className="text-xs text-emerald-600">
-                                    VOC Index
+                              // Prepare data for visualization
+                              const chartData = Object.entries(categoryDist)
+                                .map(([category, percentage]) => ({
+                                  name: category,
+                                  value: parseFloat(percentage.toFixed(1)),
+                                  percentage: percentage,
+                                  fill: getCategoryColor(category)
+                                }))
+                                .sort((a, b) => b.value - a.value);
+
+                              return (
+                                <div className="space-y-4">
+                                  {/* Summary Stats */}
+                                  <div className="grid grid-cols-3 gap-2 mb-3">
+                                    <div className="bg-white rounded-lg p-2 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
+                                      <div className="text-xs text-gray-500">Categories</div>
+                                      <div className="text-lg font-bold text-green-600">{Object.keys(categoryDist).length}</div>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-2 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
+                                      <div className="text-xs text-gray-500">Total Coals</div>
+                                      <div className="text-lg font-bold text-green-600">{blend.coals.length}</div>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-2 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
+                                      <div className="text-xs text-gray-500">Dominant</div>
+                                      <div className="text-xs font-bold text-green-600 truncate" title={chartData[0]?.name}>
+                                        {chartData[0]?.name}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="text-sm font-bold text-emerald-800">
-                                    {blend.VOC_index
-                                      ? blend.VOC_index.toFixed(2)
-                                      : "N/A"}
+
+                                  {/* Interactive Category Bars */}
+                                  <div className="space-y-2">
+                                    {chartData.map((item) => (
+                                      <div 
+                                        key={item.name} 
+                                        className="group hover:translate-x-1 transition-transform duration-200 cursor-pointer"
+                                        onMouseEnter={() => setHoveredCategory(item.name)}
+                                        onMouseLeave={() => setHoveredCategory(null)}
+                                      >
+                                        <div className="flex justify-between items-center text-sm mb-1">
+                                          <div className="flex items-center gap-2">
+                                            <div 
+                                              className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white" 
+                                              style={{ backgroundColor: item.fill }}
+                                            ></div>
+                                            <span className="font-semibold text-gray-700">{item.name}</span>
+                                          </div>
+                                          <span className="text-lg font-bold text-gray-900 group-hover:text-green-600 transition-colors">
+                                            {item.value}%
+                                          </span>
+                                        </div>
+                                        <div className="relative w-full h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+                                          <div 
+                                            className="absolute h-full rounded-full transition-all duration-500 ease-out shadow-sm"
+                                            style={{ 
+                                              width: `${item.value}%`,
+                                              background: `linear-gradient(90deg, ${item.fill}, ${adjustBrightness(item.fill, 20)})`
+                                            }}
+                                          >
+                                            <div className="absolute inset-0 bg-white opacity-20 animate-shimmer"></div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  {/* Category Legend */}
+                                  <div className="mt-3 pt-3 border-t border-green-200">
+                                    <div className="text-xs text-gray-500 mb-2">Category Key</div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {['HCC', 'SHCC', 'HFCC', 'PCI', 'WC'].map((cat) => (
+                                        <div key={cat} className="flex items-center gap-1 px-2 py-1 bg-white rounded-full text-xs border border-gray-200">
+                                          <div 
+                                            className="w-2 h-2 rounded-full" 
+                                            style={{ backgroundColor: getCategoryColor(cat) }}
+                                          ></div>
+                                          <span className="font-medium text-gray-600">{cat}</span>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="bg-lime-50 p-2 rounded border border-lime-100">
-                                  <div className="text-xs text-lime-600">
-                                    VOC
-                                  </div>
-                                  <div className="text-sm font-bold text-lime-800">
-                                    {blend.VOC_Emissions
-                                      ? blend.VOC_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                                <div className="bg-violet-50 p-2 rounded border border-violet-100">
-                                  <div className="text-xs text-violet-600">
-                                    PAH
-                                  </div>
-                                  <div className="text-sm font-bold text-violet-800">
-                                    {blend.PAH_Emissions
-                                      ? blend.PAH_Emissions.toFixed(2)
-                                      : "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>

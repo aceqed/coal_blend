@@ -30,7 +30,13 @@ from inference_engine import CoalBlendInferenceEngine
 import json 
 import types
 import httpx
+import re
 
+def normalize_coal_name(name):
+    """Normalize coal name for matching - same logic as genetic_algorithm.py"""
+    s = str(name).lower().strip()
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
 # Import the new GA components
 from genetic_algorithm import FastCoalPredictor, VectorizedGA
 
@@ -591,6 +597,8 @@ async def start_optimization(simulation_id: int, simulation_data: dict, db: Sess
 async def get_simulations(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     try:
         simulations = db.query(models.Simulation).filter(models.Simulation.user_id == current_user.id).order_by(models.Simulation.generated_date.desc()).all()
+        all_coals = db.query(models.CoalProperties.coal_name, models.CoalProperties.coal_category).all()
+        coal_category_map = {normalize_coal_name(c.coal_name): c.coal_category for c in all_coals}
         result = []
         for simulation in simulations:
             coke_props = db.query(models.SimulationProperties).filter(models.SimulationProperties.simulation_id == simulation.id, models.SimulationProperties.property_type == "coke").all()
@@ -602,15 +610,14 @@ async def get_simulations(db: Session = Depends(get_db), current_user: models.Us
                 if not rec.coal_percentages: continue
                 for coal, pct in rec.coal_percentages.items():
                     if pct > 0:
+                        if (coal_category_map.get(normalize_coal_name(coal), "Unknown") == "Unknown"):
+                            print(coal)
                         processed_recs.append({
                             "id": rec.id, "simulation_id": rec.simulation_id, "coal_name": coal, "percentage": pct,
+                            "coal_category": coal_category_map.get(normalize_coal_name(coal), "Unknown"),
                             "predicted_ash": rec.predicted_ash, "predicted_vm": rec.predicted_vm, "predicted_fc": rec.predicted_fc,
                             "predicted_cri": rec.predicted_cri, "predicted_csr": rec.predicted_csr, "total_cost": rec.total_cost,
                             "predicted_csn": rec.predicted_csn, "predicted_ash_final": rec.predicted_ash_final, "predicted_vm_final": rec.predicted_vm_final,
-                            "CO2_Emissions": rec.CO2_Emissions, "CO_Emissions": rec.CO_Emissions,
-                            "SO2_Emissions": rec.SO2_Emissions, "NO_Emissions": rec.NO_Emissions, "NO2_Emissions": rec.NO2_Emissions,
-                            "PM_index": rec.PM_index, "PM10_Emissions": rec.PM10_Emissions, "PM25_Emissions": rec.PM25_Emissions,
-                            "VOC_index": rec.VOC_index, "VOC_Emissions": rec.VOC_Emissions, "PAH_Emissions": rec.PAH_Emissions,
                             "created_at": rec.created_at if hasattr(rec, 'created_at') else None,
                             "updated_at": rec.updated_at if hasattr(rec, 'updated_at') else None
                         })
@@ -635,21 +642,20 @@ async def get_simulation(simulation_id: int, db: Session = Depends(get_db), curr
         coke_props = db.query(models.SimulationProperties).filter(models.SimulationProperties.simulation_id == simulation.id, models.SimulationProperties.property_type == "coke").all()
         blend_props = db.query(models.SimulationProperties).filter(models.SimulationProperties.simulation_id == simulation.id, models.SimulationProperties.property_type == "blend").all()
         recs = db.query(models.SimulationCoalRecommendations).filter(models.SimulationCoalRecommendations.simulation_id == simulation.id).all()
-        
+                # Fetch all coal categories once for efficient mapping
+        all_coals = db.query(models.CoalProperties.coal_name, models.CoalProperties.coal_category).all()
+        coal_category_map = {normalize_coal_name(c.coal_name): c.coal_category for c in all_coals}
         processed_recs = []
         for rec in recs:
             if not rec.coal_percentages: continue
             for coal, pct in rec.coal_percentages.items():
                 if pct > 0:
                     processed_recs.append({
-                        "id": rec.id, "simulation_id": rec.simulation_id, "coal_name": coal, "percentage": pct,
+                        "id": rec.id, "simulation_id": rec.simulation_id, "coal_name": coal.lower(), "percentage": pct,
+                        "coal_category": coal_category_map.get(normalize_coal_name(coal), "Unknown"),
                         "predicted_ash": rec.predicted_ash, "predicted_vm": rec.predicted_vm, "predicted_fc": rec.predicted_fc,
                         "predicted_cri": rec.predicted_cri, "predicted_csr": rec.predicted_csr, "total_cost": rec.total_cost,
                         "predicted_csn": rec.predicted_csn, "predicted_ash_final": rec.predicted_ash_final, "predicted_vm_final": rec.predicted_vm_final,
-                        "CO2_Emissions": rec.CO2_Emissions, "CO_Emissions": rec.CO_Emissions,
-                        "SO2_Emissions": rec.SO2_Emissions, "NO_Emissions": rec.NO_Emissions, "NO2_Emissions": rec.NO2_Emissions,
-                        "PM_index": rec.PM_index, "PM10_Emissions": rec.PM10_Emissions, "PM25_Emissions": rec.PM25_Emissions,
-                        "VOC_index": rec.VOC_index, "VOC_Emissions": rec.VOC_Emissions, "PAH_Emissions": rec.PAH_Emissions,
                         "created_at": rec.created_at if hasattr(rec, 'created_at') else None,
                         "updated_at": rec.updated_at if hasattr(rec, 'updated_at') else None
                     })

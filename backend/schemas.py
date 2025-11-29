@@ -151,6 +151,7 @@ class BlendRecommendationBase(BaseModel):
     predicted_csr: float
     predicted_ash_final: float
     predicted_vm_final: float
+    coal_category: Optional[str] = None
     # Emission properties
     CO2_Emissions: Optional[float] = None
     CO_Emissions: Optional[float] = None

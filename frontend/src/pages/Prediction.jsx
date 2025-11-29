@@ -261,14 +261,20 @@ function Prediction() {
 
   return (
     <PageLayout title="Prediction">
-      {/* Add Blend Button at the top */}
-      <div className="flex justify-between items-center mb-1">
-        <h2 className="text-lg font-medium text-gray-700">Coal Blends</h2>
+      {/* Add Blend Button at the top - Modern */}
+      <div className="flex justify-between items-center mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 shadow-sm">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <BarChart className="h-6 w-6 text-blue-600" />
+            Coal Blend Predictions
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">Create and analyze multiple coal blends</p>
+        </div>
         <button
           onClick={addPanel}
-          className="flex items-center px-4 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+          className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
         >
-          <Plus size={15} className="mr-2" />
+          <Plus size={18} className="mr-2" />
           Add Blend
         </button>
       </div>
@@ -276,23 +282,23 @@ function Prediction() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {panels.map((panel) => (
           <div key={panel.id} className="flex flex-col">
-            {/* Coal Selection Panel */}
-            <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden mb-6 bg-blue-180">
-              <div className="bg-gray-100 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                <h2 className="font-medium text-gray-700">Blend {panel.id}</h2>
+            {/* Coal Selection Panel - Enhanced */}
+            <div className="bg-white rounded-2xl border-2 border-blue-200 overflow-hidden mb-6 shadow-xl hover:shadow-2xl transition-shadow">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 flex justify-between items-center">
+                <h2 className="font-bold text-white text-lg">Blend {panel.id}</h2>
                 {panels.length > 1 && (
                   <button
                     onClick={() => removePanel(panel.id)}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
                   >
-                    <X size={16} />
+                    <X size={20} />
                   </button>
                 )}
               </div>
-              <div className="p-4">
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Enter no. of coals
+              <div className="p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+                <div className="mb-5">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Number of Coals
                   </label>
                   <input
                     type="number"
@@ -300,34 +306,33 @@ function Prediction() {
                     max="10"
                     value={panel.numCoals}
                     onChange={(e) => handleNumCoalsChange(panel.id, e)}
-                    className="w-full p-2 text-sm text-gray-900 font-medium border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yeloo-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm placeholder-gray-400"
+                    className="w-full p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
                   />
                 </div>
 
-                <div className="space-y-3 mb-4">
+                <div className="space-y-4 mb-5">
                   {panel.coalSelections.map((coal) => (
                     <div key={coal.id} className="grid grid-cols-2 gap-3">
                       <div>
                         <label
                           className={
                             coal.id === 1
-                              ? "block text-sm font-medium text-gray-700 mb-1"
+                              ? "block text-sm font-semibold text-gray-700 mb-2"
                               : "sr-only"
                           }
                         >
                           Coal Name
                         </label>
                         <div className="relative">
-                          <div className="flex">
+                          <div className="flex gap-2">
                             <input
                               type="text"
                               value={searchInputs[`${panel.id}-${coal.id}`] || ""}
                               onChange={(e) =>
                                 handleSearchChange(panel.id, coal.id, e.target.value)
                               }
-                              className="w-full p-2 text-sm text-gray-900 font-medium border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yeloo-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm placeholder-gray-400"
+                              className="flex-1 p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
                               placeholder="Search coal"
-                              style={{ fontSize: "12px" }}
                             />
                             <button
                               type="button"
@@ -342,19 +347,18 @@ function Prediction() {
                                   };
                                 });
                               }}
-                              className="ml-1 px-2 border border-gray-700 rounded-md bg-gray-700 text-white hover:bg-gray-600"
+                              className="px-3 py-2 border-2 border-blue-600 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 transition-all font-bold shadow-md"
                             >
                               ▼
                             </button>
                           </div>
                           {filteredCoals[`${panel.id}-${coal.id}`]?.length > 0 && (
-                            <div className="absolute z-10 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg max-h-48 overflow-auto">
+                            <div className="absolute z-10 w-full mt-2 bg-white border-2 border-blue-300 rounded-xl shadow-2xl max-h-48 overflow-auto">
                               {filteredCoals[`${panel.id}-${coal.id}`].map((availableCoal) => (
                                 <div
                                   key={availableCoal.id}
                                   onClick={() => handleCoalSelect(panel.id, coal.id, availableCoal)}
-                                  className="px-2 py-1 text-sm text-white hover:bg-gray-600 cursor-pointer"
-                                  style={{ fontSize: "12px" }}
+                                  className="px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors font-medium"
                                 >
                                   {availableCoal.name}
                                 </div>
@@ -367,7 +371,7 @@ function Prediction() {
                         <label
                           className={
                             coal.id === 1
-                              ? "block text-sm font-medium text-gray-700 mb-1"
+                              ? "block text-sm font-semibold text-gray-700 mb-2"
                               : "sr-only"
                           }
                         >
@@ -386,24 +390,25 @@ function Prediction() {
                               Number.parseFloat(e.target.value) || ""
                             )
                           }
-                          className="w-full p-2 text-sm text-gray-900 font-medium border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yeloo-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm placeholder-gray-400"
+                          className="w-full p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
+                          placeholder="%"
                         />
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-between items-center mb-4">
-                  <div className="text-sm font-medium text-gray-700">
-                    Total Percentage:&nbsp;
+                <div className="bg-white rounded-xl p-4 mb-5 border-2 border-blue-100 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-semibold text-gray-700">Total Percentage:</span>
                     <span
-                      className={panel.totalPercentage === 100 ? "text-green-600" : "text-red-600"}
+                      className={`text-lg font-bold ${panel.totalPercentage === 100 ? "text-green-600" : "text-red-600"}`}
                     >
                       {panel.totalPercentage}%
                     </span>
                   </div>
                   {panel.totalPercentage > 100 && (
-                    <div className="text-sm text-red-600">Total cannot exceed 100%</div>
+                    <div className="text-sm text-red-600 mt-2 font-medium">⚠️ Total cannot exceed 100%</div>
                   )}
                 </div>
 
@@ -414,39 +419,39 @@ function Prediction() {
                     panel.totalPercentage !== 100 ||
                     hasUnselectedCoalWithPercentage(panel)
                   }
-                  className={`w-full py-2 px-4 rounded-md font-medium text-white ${
+                  className={`w-full py-3 px-4 rounded-xl font-bold text-white transition-all shadow-lg ${
                     isPanelLoading[panel.id] ||
                     panel.totalPercentage !== 100 ||
                     hasUnselectedCoalWithPercentage(panel)
-                      ? "bg-yellow-300 cursor-not-allowed"
-                      : "bg-yellow-500 hover:bg-yellow-600"
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-xl transform hover:scale-105"
                   }`}
                 >
-                  {isPanelLoading[panel.id] ? "Running..." : "Run"}
+                  {isPanelLoading[panel.id] ? "⏳ Running..." : "▶️ Run Prediction"}
                 </button>
               </div>
             </div>
 
-            {/* Results for this panel */}
+            {/* Results for this panel - Enhanced */}
             {panel.results && (
               <div className="space-y-4">
                 {/* Blend Properties */}
-                <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="bg-gray-100 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="font-medium text-gray-700">Blend Properties</h2>
-                    <BarChart size={16} className="text-gray-500" />
+                <div className="bg-white rounded-2xl border-2 border-emerald-200 overflow-hidden shadow-xl">
+                  <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4 flex justify-between items-center">
+                    <h2 className="font-bold text-white text-lg">Blend Properties</h2>
+                    <BarChart size={20} className="text-white" />
                   </div>
-                  <div className="p-4">
+                  <div className="p-6 bg-gradient-to-br from-emerald-50/50 to-green-50/50">
                     <div className="space-y-2">
                       {panel.results.predictedCoalProperties &&
                         Object.entries(panel.results.predictedCoalProperties).map(
                           ([key, value]) => (
                             <div
                               key={key}
-                              className="flex justify-between py-1 border-b border-gray-200 last:border-0"
+                              className="flex justify-between py-3 px-4 bg-white rounded-lg border border-emerald-100 hover:border-emerald-300 transition-colors shadow-sm"
                             >
-                              <span className="text-sm text-gray-600">{key}</span>
-                              <span className="text-sm font-medium  text-gray-600">
+                              <span className="text-sm font-semibold text-gray-700">{key}</span>
+                              <span className="text-sm font-bold text-emerald-700">
                                 {value.toFixed(2)}
                               </span>
                             </div>
@@ -457,21 +462,21 @@ function Prediction() {
                 </div>
 
                 {/* Coke Properties */}
-                <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="bg-gray-100 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                    <h2 className="font-medium text-gray-700">Coke Properties</h2>
-                    <BarChart size={16} className="text-gray-500" />
+                <div className="bg-white rounded-2xl border-2 border-purple-200 overflow-hidden shadow-xl">
+                  <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4 flex justify-between items-center">
+                    <h2 className="font-bold text-white text-lg">Coke Properties</h2>
+                    <BarChart size={20} className="text-white" />
                   </div>
-                  <div className="p-4">
+                  <div className="p-6 bg-gradient-to-br from-purple-50/50 to-violet-50/50">
                     <div className="space-y-2">
                       {panel.results.cokeProperties &&
                         Object.entries(panel.results.cokeProperties).map(([key, value]) => (
                           <div
                             key={key}
-                            className="flex justify-between py-1 border-b border-gray-200 last:border-0"
+                            className="flex justify-between py-3 px-4 bg-white rounded-lg border border-purple-100 hover:border-purple-300 transition-colors shadow-sm"
                           >
-                            <span className="text-sm text-gray-600">{key}</span>
-                            <span className="text-sm font-medium  text-gray-600 ">
+                            <span className="text-sm font-semibold text-gray-700">{key}</span>
+                            <span className="text-sm font-bold text-purple-700">
                               {value.toFixed(4)}
                             </span>
                           </div>

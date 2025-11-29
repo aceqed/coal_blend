@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import Modal from "../components/Modal";
+import CoalDataForm from "../components/CoalDataForm";
 
 // Updated fields to match backend `VendorCoalBase` / `CoalProperties`
 const COAL_PROPERTIES = [
@@ -100,6 +102,7 @@ const COAL_PROPERTIES = [
   { id: "V18", label: "V18", type: "number", step: "0.01" },
   { id: "V19", label: "V19", type: "number", step: "0.01" },
 ];
+
 function VendorDataUpload() {
   const [activeTab, setActiveTab] = useState("upload"); // upload | list
   const [formData, setFormData] = useState({});
@@ -110,6 +113,9 @@ function VendorDataUpload() {
   // Vendor coal list
   const [coalList, setCoalList] = useState([]);
   const [selectedCoal, setSelectedCoal] = useState(null);
+  
+  // New state for edit modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchCoals = async () => {
     try {
@@ -128,7 +134,7 @@ function VendorDataUpload() {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) || "" : value,
+      [name]: type === "number" ? (value === "" ? "" : parseFloat(value)) : value,
     }));
   };
 
@@ -145,6 +151,7 @@ function VendorDataUpload() {
         setMessage({ type: "success", text: "Coal uploaded successfully" });
         setFormData({});
         setFile(null);
+        setIsEditModalOpen(false); // Close modal on success
       } else {
         throw new Error("Unexpected error");
       }
@@ -186,37 +193,37 @@ function VendorDataUpload() {
 
   return (
     <PageLayout title="Vendor Coal Data">
-      <div className="max-w-5xl mx-auto p-6">
-        {/* Tabs */}
-        <div className="flex space-x-4 mb-6">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Tabs - Modern Design */}
+        <div className="flex space-x-2 mb-8 bg-gray-100 p-1.5 rounded-xl shadow-inner">
           <button
             onClick={() => setActiveTab("upload")}
-            className={`px-4 py-2 rounded-md ${
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
               activeTab === "upload"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-black"
+                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/50 scale-105"
+                : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
             }`}
           >
-            Upload Coal
+            📤 Upload Coal
           </button>
           <button
             onClick={() => setActiveTab("list")}
-            className={`px-4 py-2 rounded-md ${
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
               activeTab === "list"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-black"
+                ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/50 scale-105"
+                : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
             }`}
           >
-            Vendor Coal List
+            📋 Vendor Coal List
           </button>
         </div>
 
         {message.text && (
           <div
-            className={`p-3 mb-6 rounded-md ${
+            className={`p-4 mb-6 rounded-lg shadow-md border-l-4 font-medium ${
               message.type === "error"
-                ? "bg-red-100 text-red-700"
-                : "bg-green-100 text-green-700"
+                ? "bg-red-50 text-red-700 border-red-500"
+                : "bg-green-50 text-green-700 border-green-500"
             }`}
           >
             {message.text}
@@ -225,77 +232,65 @@ function VendorDataUpload() {
 
         {activeTab === "upload" && (
           <>
-            {/* Toggle between PDF and Manual */}
-            <div className="flex space-x-4 mb-6 text-black">
+            {/* Toggle between PDF and Manual - Modern */}
+            <div className="flex space-x-3 mb-8 p-1.5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl shadow-inner">
               <button
                 onClick={() => setIsManualEntry(false)}
-                className={`px-4 py-2 rounded-md ${
-                  !isManualEntry ? "bg-blue-600 text-white" : "bg-gray-100"
+                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  !isManualEntry 
+                    ? "bg-white text-blue-600 shadow-md" 
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                Upload PDF
+                📄 Upload PDF
               </button>
               <button
                 onClick={() => setIsManualEntry(true)}
-                className={`px-4 py-2 rounded-md ${
-                  isManualEntry ? "bg-blue-600 text-white" : "bg-gray-100"
+                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  isManualEntry 
+                    ? "bg-white text-blue-600 shadow-md" 
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                Manual Entry
+                ✍️ Manual Entry
               </button>
             </div>
 
             {/* Manual Entry Form */}
             {isManualEntry ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {COAL_PROPERTIES.map((prop) => (
-                    <div key={prop.id}>
-                      <label className="block text-sm font-medium text-gray-700">
-                        {prop.label}
-                      </label>
-                      <input
-                        type={prop.type}
-                        name={prop.id}
-                        value={formData[prop.id] || ""}
-                        onChange={handleInputChange}
-                        step={prop.step}
-                        className="w-full px-3 py-2 border bg-white text-black border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex justify-end space-x-3 mt-6">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
-                  >
-                    <Save className="h-4 w-4 mr-2" /> Save Coal Data
-                  </button>
-                </div>
-              </form>
+              <CoalDataForm 
+                formData={formData} 
+                onChange={handleInputChange} 
+                onSubmit={handleSubmit} 
+                isLoading={isLoading} 
+              />
             ) : (
-              // PDF Upload Section
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center flex flex-col items-center text-black">
-                <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-600 mb-2">
-                  Upload a PDF containing coal property data
+              // PDF Upload Section - Modern Card
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 rounded-2xl p-12 text-center shadow-lg hover:shadow-xl transition-shadow">
+                <div className="bg-white rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center shadow-md">
+                  <Upload className="h-10 w-10 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">Upload PDF Document</h3>
+                <p className="text-gray-600 mb-6">
+                  Upload a PDF containing coal property data for automatic extraction
                 </p>
-                <label className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer">
+                <label className="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 cursor-pointer shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 font-semibold">
                   <input
                     type="file"
                     accept=".pdf"
                     onChange={(e) => setFile(e.target.files[0])}
                     className="hidden"
                   />
-                  <span>Select PDF File</span>
+                  <span className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Select PDF File
+                  </span>
                 </label>
 
                 {file && (
-                  <div className="mt-4 p-3 bg-blue-50 text-blue-700 rounded-md inline-flex items-center">
-                    <FileText className="h-5 w-5 mr-2" />
-                    {file.name}
+                  <div className="mt-6 p-4 bg-white border border-blue-200 text-blue-700 rounded-xl inline-flex items-center shadow-md">
+                    <FileText className="h-5 w-5 mr-2 text-blue-600" />
+                    <span className="font-medium">{file.name}</span>
                   </div>
                 )}
 
@@ -322,7 +317,7 @@ function VendorDataUpload() {
 
                       setFormData((prev) => ({
                         ...prev,
-                        ...result.coal_data, // 👈 match schema
+                        ...result.coal_data,
                         coal_name:
                           result.coal_data?.coal_name ||
                           prev.coal_name ||
@@ -330,8 +325,9 @@ function VendorDataUpload() {
                       }));
                       setMessage({
                         type: "success",
-                        text: "PDF processed successfully",
+                        text: "PDF processed successfully. Please review the extracted data.",
                       });
+                      setIsEditModalOpen(true);
                     } catch (err) {
                       setMessage({ type: "error", text: err.message });
                     } finally {
@@ -339,13 +335,14 @@ function VendorDataUpload() {
                     }
                   }}
                   disabled={!file || isLoading}
-                  className={`mt-6 px-4 py-2 rounded-md flex items-center ${
+                  className={`mt-8 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 mx-auto transition-all duration-200 ${
                     !file || isLoading
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-green-600 text-white hover:bg-green-700"
+                      : "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:scale-105"
                   }`}
                 >
-                  <Upload className="h-4 w-4 mr-1" /> Upload & Extract
+                  <Upload className="h-5 w-5" />
+                  {isLoading ? "Processing..." : "Upload & Extract"}
                 </button>
               </div>
             )}
@@ -353,94 +350,146 @@ function VendorDataUpload() {
         )}
 
         {activeTab === "list" && (
-          <div>
-            <table className="w-full border border-gray-200 text-left text-black">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 border">Coal Name</th>
-                  <th className="px-4 py-2 border">Vendor</th>
-                  <th className="px-4 py-2 border">Status</th>
-                  <th className="px-4 py-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coalList.map((coal) => (
-                  <tr key={coal.id}>
-                    <td className="px-4 py-2 border">{coal?.coal_name}</td>
-                    <td className="px-4 py-2 border">{coal?.vendor_name}</td>
-                    <td className="px-4 py-2 border">
-                      {coal.is_approved ? "Approved" : "Pending"}
-                    </td>
-                    <td className="px-4 py-2 border space-x-2">
-                      <button
-                        onClick={() => setSelectedCoal(coal)}
-                        className="px-2 py-1 text-sm bg-gray-100 rounded flex items-center"
-                      >
-                        <Eye className="h-4 w-4 mr-1" /> View/Edit
-                      </button>
-                      {!coal.is_approved && (
-                        <button
-                          onClick={() => handleApprove(coal.id)}
-                          className="px-2 py-1 text-sm bg-green-600 text-white rounded flex items-center"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" /> Approve
-                        </button>
-                      )}
-                    </td>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4">
+              <h2 className="text-xl font-bold text-white">Vendor Coal Database</h2>
+              <p className="text-emerald-100 text-sm mt-1">Review and approve vendor submissions</p>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-black">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-emerald-200">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Coal Name</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Vendor</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {coalList.map((coal, idx) => (
+                    <tr 
+                      key={coal.id}
+                      className={`border-b border-gray-100 hover:bg-emerald-50 transition-colors ${
+                        idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">{coal?.coal_name}</td>
+                      <td className="px-6 py-4 text-gray-600">{coal?.vendor_name}</td>
+                      <td className="px-6 py-4">
+                        {coal.is_approved ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                            <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Approved
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                            Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelectedCoal(coal)}
+                            className="px-3 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                          >
+                            <Eye className="h-4 w-4" /> View/Edit
+                          </button>
+                          {!coal.is_approved && (
+                            <button
+                              onClick={() => handleApprove(coal.id)}
+                              className="px-3 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                            >
+                              <CheckCircle className="h-4 w-4" /> Approve
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {selectedCoal && (
-              <div className="mt-6 p-4 border rounded bg-gray-50 text-black">
-                <h3 className="font-semibold mb-4">
-                  Editing: {selectedCoal.coal_name}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl shadow-xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                      <Edit className="h-6 w-6 text-blue-600" />
+                      Editing Coal Data
+                    </h3>
+                    <p className="text-blue-600 font-semibold mt-1">{selectedCoal.coal_name}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCoal(null)}
+                    className="p-2 hover:bg-white rounded-full transition-colors"
+                  >
+                    <X className="h-6 w-6 text-gray-500" />
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-white p-6 rounded-xl shadow-inner">
                   {COAL_PROPERTIES.map((prop) => (
                     <div key={prop.id}>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         {prop.label}
                       </label>
                       <input
                         type={prop.type}
                         name={prop.id}
-                        value={selectedCoal[prop.id] || ""}
+                        value={selectedCoal[prop.id] !== undefined && selectedCoal[prop.id] !== null ? selectedCoal[prop.id] : ""}
                         onChange={(e) =>
                           setSelectedCoal((prev) => ({
                             ...prev,
                             [e.target.name]:
                               e.target.type === "number"
-                                ? parseFloat(e.target.value) || ""
+                                ? (e.target.value === "" ? null : parseFloat(e.target.value))
                                 : e.target.value,
                           }))
                         }
                         step={prop.step}
-                        className="w-full px-3 py-2 border bg-white text-black border-gray-300 rounded-md"
+                        className="w-full px-3 py-2.5 border-2 bg-white text-black border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                       />
                     </div>
                   ))}
                 </div>
 
-                <div className="flex justify-end space-x-3 mt-6">
-                  <button
-                    onClick={handleUpdate}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                  >
-                    <Edit className="h-4 w-4 mr-2 inline" /> Update
-                  </button>
+                <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={() => setSelectedCoal(null)}
-                    className="px-4 py-2 border rounded-md"
+                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 flex items-center gap-2 font-semibold transition-all"
                   >
-                    <X className="h-4 w-4 mr-2 inline" /> Close
+                    <X className="h-4 w-4" /> Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdate}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                  >
+                    <Save className="h-4 w-4" /> Save Changes
                   </button>
                 </div>
               </div>
             )}
           </div>
         )}
+
+        {/* Edit Modal for Extracted Data */}
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title="Review & Edit Extracted Data"
+        >
+          <CoalDataForm 
+            formData={formData} 
+            onChange={handleInputChange} 
+            onSubmit={handleSubmit} 
+            isLoading={isLoading}
+            onCancel={() => setIsEditModalOpen(false)}
+          />
+        </Modal>
       </div>
     </PageLayout>
   );

@@ -40,7 +40,7 @@ const CreateSimulation = ({ onBack }) => {
 
   // Temporary state for debouncing
   const [tempCokeValues, setTempCokeValues] = useState({});
-  const [tempBlendValues, setTempBlendValues] = useState({});
+
 
   const configurations = [
     "Choose the Configuration from the List",
@@ -76,17 +76,7 @@ const CreateSimulation = ({ onBack }) => {
     );
   }, []);
 
-  // Debounced function for blend properties
-  const debouncedBlendPropertyChange = useCallback((propertyKey, type, value) => {
-    console.log(`Setting blend property: ${propertyKey}, ${type}, ${value}`);
-    setBlendProperties((prev) =>
-      prev.map((prop) =>
-        prop.key === propertyKey
-          ? { ...prop, [type]: value === "" ? "" : Number.parseFloat(value) || 0 }
-          : prop
-      )
-    );
-  }, []);
+
 
   // Debouncing effect for coke properties
   useEffect(() => {
@@ -106,23 +96,7 @@ const CreateSimulation = ({ onBack }) => {
     };
   }, [tempCokeValues, debouncedCokePropertyChange]);
 
-  // Debouncing effect for blend properties
-  useEffect(() => {
-    const timeouts = Object.entries(tempBlendValues).map(([key, data]) => {
-      return setTimeout(() => {
-        debouncedBlendPropertyChange(data.propertyKey, data.type, data.value);
-        setTempBlendValues((prev) => {
-          const newValues = { ...prev };
-          delete newValues[key];
-          return newValues;
-        });
-      }, 500); // 500ms delay
-    });
 
-    return () => {
-      timeouts.forEach(clearTimeout);
-    };
-  }, [tempBlendValues, debouncedBlendPropertyChange]);
 
   const handleCokePropertyChange = (propertyKey, type, value) => {
     const tempKey = `${propertyKey}_${type}`;
@@ -132,13 +106,7 @@ const CreateSimulation = ({ onBack }) => {
     }));
   };
 
-  const handleBlendPropertyChange = (propertyKey, type, value) => {
-    const tempKey = `${propertyKey}_${type}`;
-    setTempBlendValues((prev) => ({
-      ...prev,
-      [tempKey]: { propertyKey, type, value },
-    }));
-  };
+
 
   const handleCoalEntryChange = (index, field, value) => {
     const updatedEntries = [...coalEntries];
@@ -293,14 +261,7 @@ const CreateSimulation = ({ onBack }) => {
     return property ? property[type] : "";
   };
 
-  const getBlendValue = (propertyKey, type) => {
-    const tempKey = `${propertyKey}_${type}`;
-    if (tempBlendValues[tempKey]) {
-      return tempBlendValues[tempKey].value;
-    }
-    const property = blendProperties.find((prop) => prop.key === propertyKey);
-    return property ? property[type] : "";
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3">
@@ -437,8 +398,8 @@ const CreateSimulation = ({ onBack }) => {
                   </div>
                 </div>
 
-                {/* Properties in 2 columns */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Properties */}
+                <div className="space-y-3">
                   {/* Coke Properties */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -475,50 +436,6 @@ const CreateSimulation = ({ onBack }) => {
                                   handleCokePropertyChange(property.key, "max", e.target.value)
                                 }
                                 className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Blend Properties */}
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 shadow-sm">
-                    <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                      Blend Properties
-                    </h3>
-                    <div className="space-y-2">
-                      {blendProperties.map((property) => (
-                        <div
-                          key={property.key}
-                          className="bg-white/70 backdrop-blur-sm rounded-lg p-2 border border-green-100 hover:shadow-lg hover:shadow-green-200/50 hover:scale-[1.02] hover:bg-white/90 hover:border-green-300 transition-all duration-300 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-20 flex-shrink-0">
-                              <span className="text-gray-800 font-semibold text-xs uppercase tracking-wide">
-                                {property.key.replace(/([A-Z])/g, " $1").trim()}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-700 text-xs font-medium">Min</span>
-                              <input
-                                type="number"
-                                value={getBlendValue(property.key, "min")}
-                                onChange={(e) =>
-                                  handleBlendPropertyChange(property.key, "min", e.target.value)
-                                }
-                                className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
-                              />
-                              <span className="text-gray-700 text-xs font-medium">Max</span>
-                              <input
-                                type="number"
-                                value={getBlendValue(property.key, "max")}
-                                onChange={(e) =>
-                                  handleBlendPropertyChange(property.key, "max", e.target.value)
-                                }
-                                className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
                               />
                             </div>
                           </div>
@@ -699,7 +616,6 @@ const CreateSimulation = ({ onBack }) => {
                       )}
 
                     {/* Properties Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Coke Properties */}
                       <div className="bg-white rounded-lg border border-gray-200 p-4">
                         <h3 className="text-lg font-semibold text-gray-800 mb-3">
@@ -717,23 +633,6 @@ const CreateSimulation = ({ onBack }) => {
                         </div>
                       </div>
 
-                      {/* Blend Properties */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                          Blend Properties
-                        </h3>
-                        <div className="space-y-2">
-                          {simulationResponse.blend_properties?.map((prop, index) => (
-                            <div key={index} className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">{prop.property_name}</span>
-                              <span className="text-sm text-gray-900">
-                                {prop.min_value} - {prop.max_value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
                   </>
                 )}
               </div>

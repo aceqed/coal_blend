@@ -1,6 +1,6 @@
 import PageLayout from "../Layout/pageLayout.jsx";
 import { useState, useEffect } from "react";
-import { Search, Plus, MoreVertical, Eye, Loader } from "lucide-react";
+import { Search, Plus, ChevronRight, Eye, Loader } from "lucide-react";
 import RecommendationsView from "./RecommendationsView.jsx";
 import CreateSimulation from "./CreateSimulation.jsx";
 import api from "../services/api";
@@ -11,7 +11,6 @@ import api from "../services/api";
 // and also cost effective blend using these coal using generative algoritham
 const SimulationManager = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [openDropdown, setOpenDropdown] = useState(null);
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'recommendations'
   const [selectedScenario, setSelectedScenario] = useState(null);
   const [simulations, setSimulations] = useState([]);
@@ -415,94 +414,151 @@ const SimulationManager = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-200 border-b border-gray-200">
+                <thead className="bg-gradient-to-r from-gray-100 to-gray-50 border-b-2 border-gray-300">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Scenario Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Scenarios Description
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Description
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Generate Date
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Generated Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Blends
+                    </th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Best CSR
+                    </th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Best CRI
+                    </th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Coals
+                    </th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                    <th className="px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-16">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredScenarios.map((scenario) => (
-                    <tr key={scenario.id} className="hover:bg-blue-100 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {scenario.scenario_name || ""}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {scenario.scenario_description || ""}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {scenario.generated_date
-                          ? new Date(scenario.generated_date).toLocaleString()
-                          : ""}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusStyle(
-                              scenario.status
-                            )}`}
-                          >
-                            {scenario.status === "running" && (
-                              <Loader className="h-3 w-3 animate-spin mr-1" />
-                            )}
-                            {(scenario.status || "").toUpperCase()}
-                          </span>
-                          {scenario.status === "running" && (
-                            <button
-                              onClick={() => handleStopSimulation(scenario.id)}
-                              className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded transition-colors"
-                              title="Stop simulation"
-                            >
-                              Stop
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="relative dropdown-container">
-                          <button
-                            onClick={() => handleDropdownToggle(scenario.id)}
-                            className={`text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors ${
-                              scenario.status === "running" ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                            title={
-                              scenario.status === "running"
-                                ? "Cannot view while running"
-                                : "Click to view"
-                            }
-                            disabled={scenario.status === "running"}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
+                  {filteredScenarios.map((scenario) => {
+                    // Calculate statistics from recommendations
+                    const recommendations = scenario.recommendations || [];
+                    const uniqueBlends = new Set(recommendations.map(r => r.simulation_id));
+                    const csrValues = recommendations.map(r => r.predicted_csr).filter(v => v != null);
+                    const criValues = recommendations.map(r => r.predicted_cri).filter(v => v != null);
+                    const uniqueCoals = new Set(recommendations.map(r => r.coal_name));
+                    
+                    const bestCSR = csrValues.length > 0 ? Math.max(...csrValues).toFixed(2) : '-';
+                    const bestCRI = criValues.length > 0 ? Math.min(...criValues).toFixed(2) : '-';
+                    const blendCount = uniqueBlends.size || recommendations.length > 0 ? Math.ceil(recommendations.length / 7) : 0;
+                    const coalCount = uniqueCoals.size;
 
-                          {openDropdown === scenario.id && scenario.status !== "running" && (
-                            <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    return (
+                      <tr key={scenario.id} className="hover:bg-blue-50 transition-colors">
+                        <td className="px-4 py-4 text-sm font-semibold text-gray-900">
+                          {scenario.scenario_name || ""}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-600 max-w-xs truncate">
+                          {scenario.scenario_description || ""}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {scenario.generated_date
+                            ? new Date(scenario.generated_date).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            : ""}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                            {blendCount}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                            bestCSR === '-' ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700 border border-green-200'
+                          }`}>
+                            {bestCSR}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                            bestCRI === '-' ? 'bg-gray-100 text-gray-500' : 'bg-purple-100 text-purple-700 border border-purple-200'
+                          }`}>
+                            {bestCRI}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                            {coalCount || '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full border ${getStatusStyle(
+                                scenario.status
+                              )}`}
+                            >
+                              {scenario.status === "running" && (
+                                <Loader className="h-3 w-3 animate-spin mr-1" />
+                              )}
+                              {(scenario.status || "").toUpperCase()}
+                            </span>
+                            {scenario.status === "running" && (
                               <button
-                                onClick={() => handleView(scenario)}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                                onClick={() => handleStopSimulation(scenario.id)}
+                                className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded transition-colors font-semibold"
+                                title="Stop simulation"
                               >
-                                <Eye className="h-4 w-4" />
-                                View
+                                Stop
                               </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="relative dropdown-container">
+                            <button
+                              onClick={() => handleDropdownToggle(scenario.id)}
+                              className={`text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors ${
+                                scenario.status === "running" ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
+                              title={
+                                scenario.status === "running"
+                                  ? "Cannot view while running"
+                                  : "Click to view"
+                              }
+                              disabled={scenario.status === "running"}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+
+                            {openDropdown === scenario.id && scenario.status !== "running" && (
+                              <div className="absolute right-0 top-8 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                                <button
+                                  onClick={() => handleView(scenario)}
+                                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  View
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+}
                 </tbody>
               </table>
 
