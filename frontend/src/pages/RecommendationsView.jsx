@@ -175,6 +175,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
           VOC_index: rec.VOC_index,
           VOC_Emissions: rec.VOC_Emissions,
           PAH_Emissions: rec.PAH_Emissions,
+          total_cost: rec.total_cost,
         };
       }
 
@@ -533,15 +534,15 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                 <div
                                   key={coalIndex}
                                   className={`flex items-center justify-between p-2 bg-gray-50 rounded-md transition-all duration-200 ${hoveredCategory && coal.category === hoveredCategory
-                                      ? 'ring-2 ring-green-500 bg-green-50 shadow-md'
-                                      : ''
+                                    ? 'ring-2 ring-green-500 bg-green-50 shadow-md'
+                                    : ''
                                     }`}
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
                                       className={`w-3 h-3 ${coalColors[
                                         coalIndex % coalColors.length
-                                        ]
+                                      ]
                                         } rounded-full`}
                                     ></div>
                                     <span className="text-sm font-medium text-gray-800 truncate">
@@ -598,6 +599,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                     {blend.predicted.csr}%
                                   </div>
                                 </div>
+
                               </div>
                             </div>
                           </div>
@@ -698,6 +700,24 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                           <span className="font-medium text-gray-600">{cat}</span>
                                         </div>
                                       ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Cost Display */}
+                                  <div className="mt-4 pt-3 border-t border-green-200">
+                                    <div className="flex items-center justify-between bg-white/60 p-3 rounded-lg border border-green-100">
+                                      <div>
+                                        <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">Estimated Cost</div>
+                                        <div className="text-2xl font-bold text-emerald-700">
+                                          ₹{blend.total_cost?.toFixed(2)}
+                                          <span className="text-sm font-normal text-gray-500 ml-1">/ ton</span>
+                                        </div>
+                                      </div>
+                                      <div className="p-2 bg-emerald-100 rounded-full">
+                                        <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>

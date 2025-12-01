@@ -164,6 +164,7 @@ class BlendRecommendationBase(BaseModel):
     VOC_index: Optional[float] = None
     VOC_Emissions: Optional[float] = None
     PAH_Emissions: Optional[float] = None
+    total_cost: Optional[float] = None
    
 
 class BlendRecommendationCreate(BlendRecommendationBase):
