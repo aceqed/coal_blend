@@ -12,6 +12,7 @@ function Prediction() {
 
   // Get user data from Redux store
   const { user, loader } = useSelector((state) => state.auth);
+  const [availableCoals, setAvailableCoals] = useState([]);
 
   // State for managing multiple blend panels
   const [panels, setPanels] = useState([
@@ -48,36 +49,22 @@ function Prediction() {
     );
   }
 
-  // Sample coal data - hardcoded for testing
-  const availableCoals = [
-    { id: 1, name: "Riverside" },
-    { id: 2, name: "Moranbah North" },
-    { id: 3, name: "Illawara (PHCC)" },
-    { id: 4, name: "Goonyella" },
-    { id: 5, name: "Caval Ridge" },
-    { id: 6, name: "PDN" },
-    { id: 7, name: "Poitrel" },
-    { id: 8, name: "Amonate" },
-    { id: 9, name: "Aus. SHCC" },
-    { id: 10, name: "Teck Venture" },
-    { id: 11, name: "Lake Vermont" },
-    { id: 12, name: "Metropolitan" },
-    { id: 13, name: "Indonasian" },
-    { id: 14, name: "Low Ash SHCC/ SHCC-BHP" },
-    { id: 15, name: "Eagle crrek" },
-    { id: 16, name: "Dhamra SHCC PDN" },
-    { id: 17, name: "Daunia (SHCC)" },
-    { id: 18, name: "Leer" },
-    { id: 19, name: "Elga" },
-    { id: 20, name: "Leer/Russian HFCC" },
-    { id: 21, name: "Uvalnaya" },
-    { id: 22, name: "Blue creek" },
-    { id: 23, name: "Mt. Laurel" },
-    { id: 24, name: "R.PCI" },
-    { id: 25, name: "Scratch Coal" },
-    { id: 26, name: "Indian Coal Dhanbaad" },
-  ];
 
+  // Fetch available coals on component mount
+  useEffect(() => {
+    const fetchCoals = async () => {
+      try {
+        const response = await api.get("/coals/available");
+        setAvailableCoals(response.data.coals);
+      } catch (error) {
+        console.error("Error fetching coals:", error);
+        // Fallback to empty array or show error
+        setAvailableCoals([]);
+      }
+    };
+
+    fetchCoals();
+  }, []);
   // Add a new blend panel
   const addPanel = () => {
     const newId = panels.length > 0 ? Math.max(...panels.map((p) => p.id)) + 1 : 1;
@@ -419,13 +406,12 @@ function Prediction() {
                     panel.totalPercentage !== 100 ||
                     hasUnselectedCoalWithPercentage(panel)
                   }
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-white transition-all shadow-lg ${
-                    isPanelLoading[panel.id] ||
+                  className={`w-full py-3 px-4 rounded-xl font-bold text-white transition-all shadow-lg ${isPanelLoading[panel.id] ||
                     panel.totalPercentage !== 100 ||
                     hasUnselectedCoalWithPercentage(panel)
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-xl transform hover:scale-105"
-                  }`}
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-xl transform hover:scale-105"
+                    }`}
                 >
                   {isPanelLoading[panel.id] ? "⏳ Running..." : "▶️ Run Prediction"}
                 </button>

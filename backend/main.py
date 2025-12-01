@@ -903,6 +903,19 @@ def create_vendor_coal_manual(
     db.commit()
     db.refresh(db_coal)
     return db_coal
+
+# Get Available Coals
+@app.get("/coals/available")
+async def get_available_coals(db: Session = Depends(get_db)):
+    """Get list of all available coals from the database"""
+    try:
+        coals = db.query(models.CoalProperties.coal_name).order_by(models.CoalProperties.coal_name).all()
+        coal_list = [{"id": idx + 1, "name": coal.coal_name} for idx, coal in enumerate(coals)]
+        return {"coals": coal_list}
+    except Exception as e:
+        logger.error(f"Error fetching available coals: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching coals: {str(e)}")
+
     
 if __name__ == "__main__":
     import uvicorn
