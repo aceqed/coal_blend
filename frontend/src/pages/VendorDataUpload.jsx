@@ -7,6 +7,8 @@ import {
   CheckCircle,
   Edit,
   Eye,
+  Trash2,
+  ArrowUpDown,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import api from "../services/api";
@@ -112,10 +114,13 @@ function VendorDataUpload() {
   const [isManualEntry, setIsManualEntry] = useState(false);
   // Vendor coal list
   const [coalList, setCoalList] = useState([]);
+  const [masterCoals, setMasterCoals] = useState([]);
   const [selectedCoal, setSelectedCoal] = useState(null);
-  
+
   // New state for edit modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState("desc"); // desc = newest first
 
   const fetchCoals = async () => {
     try {
@@ -126,9 +131,27 @@ function VendorDataUpload() {
     }
   };
 
+  const fetchMasterCoals = async () => {
+    try {
+      const res = await api.get("/api/master_coals");
+      setMasterCoals(res.data["data"] || []);
+    } catch (err) {
+      console.error("Error fetching master coals:", err);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "list") fetchCoals();
+    if (activeTab === "manage") fetchMasterCoals();
   }, [activeTab]);
+
+  const sortedCoals = [...coalList].sort((a, b) => {
+    const dateA = new Date(a.uploaded_at || 0);
+    const dateB = new Date(b.uploaded_at || 0);
+    return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
+  });
+
+  const toggleSort = () => setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"));
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target;
@@ -186,6 +209,18 @@ function VendorDataUpload() {
       );
       setMessage({ type: "success", text: "Coal updated" });
       fetchCoals();
+      setIsViewModalOpen(false);
+    } catch (err) {
+      setMessage({ type: "error", text: err.message });
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this coal?")) return;
+    try {
+      await api.delete(`/api/vendor_coals/${id}`);
+      setMessage({ type: "success", text: "Coal deleted successfully" });
+      fetchCoals();
     } catch (err) {
       setMessage({ type: "error", text: err.message });
     }
@@ -198,33 +233,39 @@ function VendorDataUpload() {
         <div className="flex space-x-2 mb-8 bg-gray-100 p-1.5 rounded-xl shadow-inner">
           <button
             onClick={() => setActiveTab("upload")}
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-              activeTab === "upload"
-                ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/50 scale-105"
-                : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
-            }`}
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === "upload"
+              ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/50 scale-105"
+              : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
+              }`}
           >
             📤 Upload Coal
           </button>
           <button
             onClick={() => setActiveTab("list")}
-            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-              activeTab === "list"
-                ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/50 scale-105"
-                : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
-            }`}
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === "list"
+              ? "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-lg shadow-emerald-500/50 scale-105"
+              : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
+              }`}
           >
             📋 Vendor Coal List
+          </button>
+          <button
+            onClick={() => setActiveTab("manage")}
+            className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === "manage"
+              ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-lg shadow-purple-500/50 scale-105"
+              : "bg-transparent text-gray-600 hover:bg-white hover:text-gray-900"
+              }`}
+          >
+            🏭 Manage Coals
           </button>
         </div>
 
         {message.text && (
           <div
-            className={`p-4 mb-6 rounded-lg shadow-md border-l-4 font-medium ${
-              message.type === "error"
-                ? "bg-red-50 text-red-700 border-red-500"
-                : "bg-green-50 text-green-700 border-green-500"
-            }`}
+            className={`p-4 mb-6 rounded-lg shadow-md border-l-4 font-medium ${message.type === "error"
+              ? "bg-red-50 text-red-700 border-red-500"
+              : "bg-green-50 text-green-700 border-green-500"
+              }`}
           >
             {message.text}
           </div>
@@ -236,21 +277,19 @@ function VendorDataUpload() {
             <div className="flex space-x-3 mb-8 p-1.5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl shadow-inner">
               <button
                 onClick={() => setIsManualEntry(false)}
-                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                  !isManualEntry 
-                    ? "bg-white text-blue-600 shadow-md" 
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${!isManualEntry
+                  ? "bg-white text-blue-600 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 📄 Upload PDF
               </button>
               <button
                 onClick={() => setIsManualEntry(true)}
-                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                  isManualEntry 
-                    ? "bg-white text-blue-600 shadow-md" 
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${isManualEntry
+                  ? "bg-white text-blue-600 shadow-md"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 ✍️ Manual Entry
               </button>
@@ -258,11 +297,11 @@ function VendorDataUpload() {
 
             {/* Manual Entry Form */}
             {isManualEntry ? (
-              <CoalDataForm 
-                formData={formData} 
-                onChange={handleInputChange} 
-                onSubmit={handleSubmit} 
-                isLoading={isLoading} 
+              <CoalDataForm
+                formData={formData}
+                onChange={handleInputChange}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
               />
             ) : (
               // PDF Upload Section - Modern Card
@@ -335,11 +374,10 @@ function VendorDataUpload() {
                     }
                   }}
                   disabled={!file || isLoading}
-                  className={`mt-8 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 mx-auto transition-all duration-200 ${
-                    !file || isLoading
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:scale-105"
-                  }`}
+                  className={`mt-8 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 mx-auto transition-all duration-200 ${!file || isLoading
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    }`}
                 >
                   <Upload className="h-5 w-5" />
                   {isLoading ? "Processing..." : "Upload & Extract"}
@@ -355,27 +393,33 @@ function VendorDataUpload() {
               <h2 className="text-xl font-bold text-white">Vendor Coal Database</h2>
               <p className="text-emerald-100 text-sm mt-1">Review and approve vendor submissions</p>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-black">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-emerald-200">
                   <tr>
                     <th className="px-6 py-4 font-semibold text-gray-700">Coal Name</th>
-                    <th className="px-6 py-4 font-semibold text-gray-700">Vendor</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors" onClick={toggleSort}>
+                      <div className="flex items-center gap-2">
+                        Uploaded Date
+                        <ArrowUpDown className="h-4 w-4" />
+                      </div>
+                    </th>
                     <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
                     <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {coalList.map((coal, idx) => (
-                    <tr 
+                  {sortedCoals.map((coal, idx) => (
+                    <tr
                       key={coal.id}
-                      className={`border-b border-gray-100 hover:bg-emerald-50 transition-colors ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                      }`}
+                      className={`border-b border-gray-100 hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                        }`}
                     >
                       <td className="px-6 py-4 font-medium text-gray-900">{coal?.coal_name}</td>
-                      <td className="px-6 py-4 text-gray-600">{coal?.vendor_name}</td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {coal.uploaded_at ? new Date(coal.uploaded_at).toLocaleString() : "N/A"}
+                      </td>
                       <td className="px-6 py-4">
                         {coal.is_approved ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
@@ -392,18 +436,29 @@ function VendorDataUpload() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => setSelectedCoal(coal)}
+                            onClick={() => {
+                              setSelectedCoal(coal);
+                              setIsViewModalOpen(true);
+                            }}
                             className="px-3 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
                           >
                             <Eye className="h-4 w-4" /> View/Edit
                           </button>
                           {!coal.is_approved && (
-                            <button
-                              onClick={() => handleApprove(coal.id)}
-                              className="px-3 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
-                            >
-                              <CheckCircle className="h-4 w-4" /> Approve
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleApprove(coal.id)}
+                                className="px-3 py-2 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                              >
+                                <CheckCircle className="h-4 w-4" /> Approve
+                              </button>
+                              <button
+                                onClick={() => handleDelete(coal.id)}
+                                className="px-3 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                              >
+                                <Trash2 className="h-4 w-4" /> Delete
+                              </button>
+                            </>
                           )}
                         </div>
                       </td>
@@ -413,65 +468,144 @@ function VendorDataUpload() {
               </table>
             </div>
 
-            {selectedCoal && (
-              <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl shadow-xl">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                      <Edit className="h-6 w-6 text-blue-600" />
-                      Editing Coal Data
-                    </h3>
-                    <p className="text-blue-600 font-semibold mt-1">{selectedCoal.coal_name}</p>
+            {/* View/Edit Modal */}
+            <Modal
+              isOpen={isViewModalOpen}
+              onClose={() => setIsViewModalOpen(false)}
+              title={`Editing Coal: ${selectedCoal?.coal_name || ""}`}
+            >
+              {selectedCoal && (
+                <div className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {COAL_PROPERTIES.map((prop) => (
+                      <div key={prop.id}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                          {prop.label}
+                        </label>
+                        <input
+                          type={prop.type}
+                          name={prop.id}
+                          value={
+                            selectedCoal[prop.id] !== undefined &&
+                              selectedCoal[prop.id] !== null
+                              ? selectedCoal[prop.id]
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setSelectedCoal((prev) => ({
+                              ...prev,
+                              [e.target.name]:
+                                e.target.type === "number"
+                                  ? e.target.value === ""
+                                    ? null
+                                    : parseFloat(e.target.value)
+                                  : e.target.value,
+                            }))
+                          }
+                          step={prop.step}
+                          className="w-full px-3 py-2.5 border-2 bg-white text-black border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        />
+                      </div>
+                    ))}
                   </div>
-                  <button
-                    onClick={() => setSelectedCoal(null)}
-                    className="p-2 hover:bg-white rounded-full transition-colors"
-                  >
-                    <X className="h-6 w-6 text-gray-500" />
-                  </button>
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button
+                      onClick={() => setIsViewModalOpen(false)}
+                      className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 flex items-center gap-2 font-semibold transition-all"
+                    >
+                      <X className="h-4 w-4" /> Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdate}
+                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                    >
+                      <Save className="h-4 w-4" /> Save Changes
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-white p-6 rounded-xl shadow-inner">
-                  {COAL_PROPERTIES.map((prop) => (
-                    <div key={prop.id}>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        {prop.label}
-                      </label>
-                      <input
-                        type={prop.type}
-                        name={prop.id}
-                        value={selectedCoal[prop.id] !== undefined && selectedCoal[prop.id] !== null ? selectedCoal[prop.id] : ""}
-                        onChange={(e) =>
-                          setSelectedCoal((prev) => ({
-                            ...prev,
-                            [e.target.name]:
-                              e.target.type === "number"
-                                ? (e.target.value === "" ? null : parseFloat(e.target.value))
-                                : e.target.value,
-                          }))
-                        }
-                        step={prop.step}
-                        className="w-full px-3 py-2.5 border-2 bg-white text-black border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      />
-                    </div>
-                  ))}
-                </div>
+              )}
+            </Modal>
+          </div>
+        )}
 
-                <div className="flex justify-end gap-3 mt-6">
-                  <button
-                    onClick={() => setSelectedCoal(null)}
-                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-white hover:border-gray-400 flex items-center gap-2 font-semibold transition-all"
-                  >
-                    <X className="h-4 w-4" /> Cancel
-                  </button>
-                  <button
-                    onClick={handleUpdate}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-                  >
-                    <Save className="h-4 w-4" /> Save Changes
-                  </button>
+        {activeTab === "manage" && (
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-4">
+              <h2 className="text-xl font-bold text-white">Master Coal Database</h2>
+              <p className="text-purple-100 text-sm mt-1">View and manage approved coals</p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-black">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-purple-200">
+                  <tr>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Coal Name</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Category</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Ash %</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">VM %</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">FC %</th>
+                    <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {masterCoals.map((coal, idx) => (
+                    <tr
+                      key={coal.coal_name}
+                      className={`border-b border-gray-100 hover:bg-purple-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                        }`}
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900">{coal?.coal_name}</td>
+                      <td className="px-6 py-4 text-gray-600">{coal?.coal_category || "-"}</td>
+                      <td className="px-6 py-4 text-gray-600">{coal?.Ash}</td>
+                      <td className="px-6 py-4 text-gray-600">{coal?.VM}</td>
+                      <td className="px-6 py-4 text-gray-600">{coal?.FC}</td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => {
+                            setSelectedCoal(coal);
+                            setIsViewModalOpen(true);
+                          }}
+                          className="px-3 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 flex items-center gap-1.5 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Eye className="h-4 w-4" /> View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Reuse the same edit/view modal logic since selectedCoal is shared */}
+            {selectedCoal && activeTab === "manage" && (
+              <Modal
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                title={`Coal Details: ${selectedCoal?.coal_name || ""}`}
+              >
+                <div className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {COAL_PROPERTIES.map((prop) => (
+                      <div key={prop.id}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                          {prop.label}
+                        </label>
+                        <div className="w-full px-3 py-2.5 border-2 bg-gray-50 text-black border-gray-200 rounded-lg">
+                          {selectedCoal[prop.id] !== undefined && selectedCoal[prop.id] !== null ? selectedCoal[prop.id] : "-"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-3 mt-6">
+                    <button
+                      onClick={() => setIsViewModalOpen(false)}
+                      className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 flex items-center gap-2 font-semibold shadow-lg transition-all"
+                    >
+                      <X className="h-4 w-4" /> Close
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </Modal>
             )}
           </div>
         )}
@@ -482,10 +616,10 @@ function VendorDataUpload() {
           onClose={() => setIsEditModalOpen(false)}
           title="Review & Edit Extracted Data"
         >
-          <CoalDataForm 
-            formData={formData} 
-            onChange={handleInputChange} 
-            onSubmit={handleSubmit} 
+          <CoalDataForm
+            formData={formData}
+            onChange={handleInputChange}
+            onSubmit={handleSubmit}
             isLoading={isLoading}
             onCancel={() => setIsEditModalOpen(false)}
           />

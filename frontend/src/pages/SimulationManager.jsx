@@ -4,6 +4,7 @@ import { Search, Plus, MoreVertical, Eye, Loader } from "lucide-react";
 import RecommendationsView from "./RecommendationsView.jsx";
 import CreateSimulation from "./CreateSimulation.jsx";
 import api from "../services/api";
+import toast, { Toaster } from "react-hot-toast";
 // import { Card, Button, Dropdown } from "react-bootstrap";
 
 // when we click on the create new simulation then we can put Scenarios name and scenarios description , Scenarios date and after that we have 3
@@ -307,11 +308,11 @@ const SimulationManager = () => {
       });
 
       // Show success message
-      alert("Simulation stopped successfully");
+      toast.success("Simulation stopped successfully");
     } catch (error) {
       console.error("Error stopping simulation:", error);
       const errorMessage = error.response?.data?.detail || "Failed to stop simulation";
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     }
   };
 
@@ -372,6 +373,7 @@ const SimulationManager = () => {
 
   return (
     <PageLayout title="Simulation Manager">
+      <Toaster position="top-right" />
       <div className="w-full">
         {/* Header section */}
         <div className="flex justify-between items-center mb-3">
@@ -475,9 +477,8 @@ const SimulationManager = () => {
                         <div className="relative dropdown-container">
                           <button
                             onClick={() => handleDropdownToggle(scenario.id)}
-                            className={`text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors ${
-                              scenario.status === "running" ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
+                            className={`text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors ${scenario.status === "running" ? "opacity-50 cursor-not-allowed" : ""
+                              }`}
                             title={
                               scenario.status === "running"
                                 ? "Cannot view while running"

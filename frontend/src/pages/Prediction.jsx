@@ -5,6 +5,7 @@ import PageLayout from "../Layout/pageLayout.jsx";
 import { BarChart, Plus, X } from "lucide-react";
 import { logout } from "../Redux/authSlice";
 import api from "../services/api";
+import toast, { Toaster } from "react-hot-toast";
 
 function Prediction() {
   const navigate = useNavigate();
@@ -210,13 +211,13 @@ function Prediction() {
   const handleRun = async (panelId) => {
     const panel = panels.find((p) => p.id === panelId);
     if (!panel || panel.totalPercentage !== 100) {
-      alert("Total percentage must equal 100% to run");
+      toast.error("Total percentage must equal 100% to run");
       return;
     }
 
     // Check for unselected coals with percentages
     if (hasUnselectedCoalWithPercentage(panel)) {
-      alert("Please select a coal for all percentage entries");
+      toast.error("Please select a coal for all percentage entries");
       return;
     }
 
@@ -257,244 +258,245 @@ function Prediction() {
         dispatch(logout());
         navigate("/login");
       } else {
-        alert(error.response?.data?.detail || "Failed to get prediction. Please try again.");
+        toast.error(error.response?.data?.detail || "Failed to get prediction. Please try again.");
       }
     } finally {
-      setIsPanelLoading((prev) => ({ ...prev, [panelId]: false }));
-    }
-  };
+    setIsPanelLoading((prev) => ({ ...prev, [panelId]: false }));
+  }
+};
 
-  return (
-    <PageLayout title="Prediction">
-      {/* Add Blend Button at the top - Modern */}
-      <div className="flex justify-between items-center mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 shadow-sm">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <BarChart className="h-6 w-6 text-blue-600" />
-            Coal Blend Predictions
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">Create and analyze multiple coal blends</p>
-        </div>
-        <button
-          onClick={addPanel}
-          className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
-        >
-          <Plus size={18} className="mr-2" />
-          Add Blend
-        </button>
+return (
+  <PageLayout title="Prediction">
+    <Toaster position="top-right" />
+    {/* Add Blend Button at the top - Modern */}
+    <div className="flex justify-between items-center mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200 shadow-sm">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+          <BarChart className="h-6 w-6 text-blue-600" />
+          Coal Blend Predictions
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">Create and analyze multiple coal blends</p>
       </div>
+      <button
+        onClick={addPanel}
+        className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 font-semibold"
+      >
+        <Plus size={18} className="mr-2" />
+        Add Blend
+      </button>
+    </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {panels.map((panel) => (
-          <div key={panel.id} className="flex flex-col">
-            {/* Coal Selection Panel - Enhanced */}
-            <div className="bg-white rounded-2xl border-2 border-blue-200 overflow-visible mb-6 shadow-xl hover:shadow-2xl transition-shadow">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 flex justify-between items-center">
-                <h2 className="font-bold text-white text-lg">Blend {panel.id}</h2>
-                {panels.length > 1 && (
-                  <button
-                    onClick={() => removePanel(panel.id)}
-                    className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {panels.map((panel) => (
+        <div key={panel.id} className="flex flex-col">
+          {/* Coal Selection Panel - Enhanced */}
+          <div className="bg-white rounded-2xl border-2 border-blue-200 overflow-visible mb-6 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 flex justify-between items-center">
+              <h2 className="font-bold text-white text-lg">Blend {panel.id}</h2>
+              {panels.length > 1 && (
+                <button
+                  onClick={() => removePanel(panel.id)}
+                  className="text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+            <div className="p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Number of Coals
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={panel.numCoals}
+                  onChange={(e) => handleNumCoalsChange(panel.id, e)}
+                  className="w-full p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
+                />
+              </div>
+
+              <div className="space-y-4 mb-5">
+                {panel.coalSelections.map((coal) => (
+                  <div key={coal.id} className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        className={
+                          coal.id === 1
+                            ? "block text-sm font-semibold text-gray-700 mb-2"
+                            : "sr-only"
+                        }
+                      >
+                        Coal Name
+                      </label>
+                      <div className="relative">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={searchInputs[`${panel.id}-${coal.id}`] || ""}
+                            onChange={(e) =>
+                              handleSearchChange(panel.id, coal.id, e.target.value)
+                            }
+                            className="flex-1 p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
+                            placeholder="Search coal"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilteredCoals((prev) => {
+                                const currentList = prev[`${panel.id}-${coal.id}`];
+                                const isListVisible = currentList && currentList.length > 0;
+
+                                return {
+                                  ...prev,
+                                  [`${panel.id}-${coal.id}`]: isListVisible ? [] : availableCoals,
+                                };
+                              });
+                            }}
+                            className="px-3 py-2 border-2 border-blue-600 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 transition-all font-bold shadow-md"
+                          >
+                            ▼
+                          </button>
+                        </div>
+                        {filteredCoals[`${panel.id}-${coal.id}`]?.length > 0 && (
+                          <div className="absolute z-10 w-full mt-2 bg-white border-2 border-blue-300 rounded-xl shadow-2xl max-h-48 overflow-auto">
+                            {filteredCoals[`${panel.id}-${coal.id}`].map((availableCoal) => (
+                              <div
+                                key={availableCoal.id}
+                                onClick={() => handleCoalSelect(panel.id, coal.id, availableCoal)}
+                                className="px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors font-medium"
+                              >
+                                {availableCoal.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        className={
+                          coal.id === 1
+                            ? "block text-sm font-semibold text-gray-700 mb-2"
+                            : "sr-only"
+                        }
+                      >
+                        Percentage
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={coal.percentage}
+                        onChange={(e) =>
+                          handleCoalChange(
+                            panel.id,
+                            coal.id,
+                            "percentage",
+                            Number.parseFloat(e.target.value) || ""
+                          )
+                        }
+                        className="w-full p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
+                        placeholder="%"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white rounded-xl p-4 mb-5 border-2 border-blue-100 shadow-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-700">Total Percentage:</span>
+                  <span
+                    className={`text-lg font-bold ${panel.totalPercentage === 100 ? "text-green-600" : "text-red-600"}`}
                   >
-                    <X size={20} />
-                  </button>
+                    {panel.totalPercentage}%
+                  </span>
+                </div>
+                {panel.totalPercentage > 100 && (
+                  <div className="text-sm text-red-600 mt-2 font-medium">⚠️ Total cannot exceed 100%</div>
                 )}
               </div>
-              <div className="p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
-                <div className="mb-5">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Number of Coals
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={panel.numCoals}
-                    onChange={(e) => handleNumCoalsChange(panel.id, e)}
-                    className="w-full p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
-                  />
-                </div>
 
-                <div className="space-y-4 mb-5">
-                  {panel.coalSelections.map((coal) => (
-                    <div key={coal.id} className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label
-                          className={
-                            coal.id === 1
-                              ? "block text-sm font-semibold text-gray-700 mb-2"
-                              : "sr-only"
-                          }
-                        >
-                          Coal Name
-                        </label>
-                        <div className="relative">
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={searchInputs[`${panel.id}-${coal.id}`] || ""}
-                              onChange={(e) =>
-                                handleSearchChange(panel.id, coal.id, e.target.value)
-                              }
-                              className="flex-1 p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
-                              placeholder="Search coal"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFilteredCoals((prev) => {
-                                  const currentList = prev[`${panel.id}-${coal.id}`];
-                                  const isListVisible = currentList && currentList.length > 0;
-
-                                  return {
-                                    ...prev,
-                                    [`${panel.id}-${coal.id}`]: isListVisible ? [] : availableCoals,
-                                  };
-                                });
-                              }}
-                              className="px-3 py-2 border-2 border-blue-600 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 transition-all font-bold shadow-md"
-                            >
-                              ▼
-                            </button>
-                          </div>
-                          {filteredCoals[`${panel.id}-${coal.id}`]?.length > 0 && (
-                            <div className="absolute z-10 w-full mt-2 bg-white border-2 border-blue-300 rounded-xl shadow-2xl max-h-48 overflow-auto">
-                              {filteredCoals[`${panel.id}-${coal.id}`].map((availableCoal) => (
-                                <div
-                                  key={availableCoal.id}
-                                  onClick={() => handleCoalSelect(panel.id, coal.id, availableCoal)}
-                                  className="px-4 py-2.5 text-sm text-gray-800 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors font-medium"
-                                >
-                                  {availableCoal.name}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label
-                          className={
-                            coal.id === 1
-                              ? "block text-sm font-semibold text-gray-700 mb-2"
-                              : "sr-only"
-                          }
-                        >
-                          Percentage
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={coal.percentage}
-                          onChange={(e) =>
-                            handleCoalChange(
-                              panel.id,
-                              coal.id,
-                              "percentage",
-                              Number.parseFloat(e.target.value) || ""
-                            )
-                          }
-                          className="w-full p-3 text-sm text-gray-900 font-medium border-2 border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white hover:border-blue-300 shadow-sm placeholder-gray-400"
-                          placeholder="%"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-white rounded-xl p-4 mb-5 border-2 border-blue-100 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">Total Percentage:</span>
-                    <span
-                      className={`text-lg font-bold ${panel.totalPercentage === 100 ? "text-green-600" : "text-red-600"}`}
-                    >
-                      {panel.totalPercentage}%
-                    </span>
-                  </div>
-                  {panel.totalPercentage > 100 && (
-                    <div className="text-sm text-red-600 mt-2 font-medium">⚠️ Total cannot exceed 100%</div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => handleRun(panel.id)}
-                  disabled={
-                    isPanelLoading[panel.id] ||
-                    panel.totalPercentage !== 100 ||
-                    hasUnselectedCoalWithPercentage(panel)
-                  }
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-white transition-all shadow-lg ${isPanelLoading[panel.id] ||
-                    panel.totalPercentage !== 100 ||
-                    hasUnselectedCoalWithPercentage(panel)
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-xl transform hover:scale-105"
-                    }`}
-                >
-                  {isPanelLoading[panel.id] ? "⏳ Running..." : "▶️ Run Prediction"}
-                </button>
-              </div>
+              <button
+                onClick={() => handleRun(panel.id)}
+                disabled={
+                  isPanelLoading[panel.id] ||
+                  panel.totalPercentage !== 100 ||
+                  hasUnselectedCoalWithPercentage(panel)
+                }
+                className={`w-full py-3 px-4 rounded-xl font-bold text-white transition-all shadow-lg ${isPanelLoading[panel.id] ||
+                  panel.totalPercentage !== 100 ||
+                  hasUnselectedCoalWithPercentage(panel)
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-xl transform hover:scale-105"
+                  }`}
+              >
+                {isPanelLoading[panel.id] ? "⏳ Running..." : "▶️ Run Prediction"}
+              </button>
             </div>
+          </div>
 
-            {/* Results for this panel - Enhanced */}
-            {panel.results && (
-              <div className="space-y-4">
-                {/* Blend Properties */}
-                <div className="bg-white rounded-2xl border-2 border-emerald-200 overflow-hidden shadow-xl">
-                  <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4 flex justify-between items-center">
-                    <h2 className="font-bold text-white text-lg">Blend Properties</h2>
-                    <BarChart size={20} className="text-white" />
-                  </div>
-                  <div className="p-6 bg-gradient-to-br from-emerald-50/50 to-green-50/50">
-                    <div className="space-y-2">
-                      {panel.results.predictedCoalProperties &&
-                        Object.entries(panel.results.predictedCoalProperties).map(
-                          ([key, value]) => (
-                            <div
-                              key={key}
-                              className="flex justify-between py-3 px-4 bg-white rounded-lg border border-emerald-100 hover:border-emerald-300 transition-colors shadow-sm"
-                            >
-                              <span className="text-sm font-semibold text-gray-700">{key}</span>
-                              <span className="text-sm font-bold text-emerald-700">
-                                {value.toFixed(2)}
-                              </span>
-                            </div>
-                          )
-                        )}
-                    </div>
-                  </div>
+          {/* Results for this panel - Enhanced */}
+          {panel.results && (
+            <div className="space-y-4">
+              {/* Blend Properties */}
+              <div className="bg-white rounded-2xl border-2 border-emerald-200 overflow-hidden shadow-xl">
+                <div className="bg-gradient-to-r from-emerald-600 to-green-600 px-6 py-4 flex justify-between items-center">
+                  <h2 className="font-bold text-white text-lg">Blend Properties</h2>
+                  <BarChart size={20} className="text-white" />
                 </div>
-
-                {/* Coke Properties */}
-                <div className="bg-white rounded-2xl border-2 border-purple-200 overflow-hidden shadow-xl">
-                  <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4 flex justify-between items-center">
-                    <h2 className="font-bold text-white text-lg">Coke Properties</h2>
-                    <BarChart size={20} className="text-white" />
-                  </div>
-                  <div className="p-6 bg-gradient-to-br from-purple-50/50 to-violet-50/50">
-                    <div className="space-y-2">
-                      {panel.results.cokeProperties &&
-                        Object.entries(panel.results.cokeProperties).map(([key, value]) => (
+                <div className="p-6 bg-gradient-to-br from-emerald-50/50 to-green-50/50">
+                  <div className="space-y-2">
+                    {panel.results.predictedCoalProperties &&
+                      Object.entries(panel.results.predictedCoalProperties).map(
+                        ([key, value]) => (
                           <div
                             key={key}
-                            className="flex justify-between py-3 px-4 bg-white rounded-lg border border-purple-100 hover:border-purple-300 transition-colors shadow-sm"
+                            className="flex justify-between py-3 px-4 bg-white rounded-lg border border-emerald-100 hover:border-emerald-300 transition-colors shadow-sm"
                           >
                             <span className="text-sm font-semibold text-gray-700">{key}</span>
-                            <span className="text-sm font-bold text-purple-700">
-                              {value.toFixed(4)}
+                            <span className="text-sm font-bold text-emerald-700">
+                              {value.toFixed(2)}
                             </span>
                           </div>
-                        ))}
-                    </div>
+                        )
+                      )}
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </PageLayout>
-  );
+
+              {/* Coke Properties */}
+              <div className="bg-white rounded-2xl border-2 border-purple-200 overflow-hidden shadow-xl">
+                <div className="bg-gradient-to-r from-purple-600 to-violet-600 px-6 py-4 flex justify-between items-center">
+                  <h2 className="font-bold text-white text-lg">Coke Properties</h2>
+                  <BarChart size={20} className="text-white" />
+                </div>
+                <div className="p-6 bg-gradient-to-br from-purple-50/50 to-violet-50/50">
+                  <div className="space-y-2">
+                    {panel.results.cokeProperties &&
+                      Object.entries(panel.results.cokeProperties).map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="flex justify-between py-3 px-4 bg-white rounded-lg border border-purple-100 hover:border-purple-300 transition-colors shadow-sm"
+                        >
+                          <span className="text-sm font-semibold text-gray-700">{key}</span>
+                          <span className="text-sm font-bold text-purple-700">
+                            {value.toFixed(4)}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </PageLayout>
+);
 }
 
 export default Prediction;

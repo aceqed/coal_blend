@@ -4,6 +4,9 @@ import pickle
 import re
 from pathlib import Path
 from pycaret.regression import load_model, predict_model
+from sqlalchemy import create_engine
+import os
+from dotenv import load_dotenv
 
 
 class CoalBlendPredictor:
@@ -40,13 +43,17 @@ class CoalBlendPredictor:
         # Load all necessary files
         self._load_resources()
 
+    def _reload_coal_data(self):
+        """Reload only the coal database"""
+        self.coal_db = self._load_coal_database()
+        self.coal_db = self._feature_engineering(self.coal_db)
+        self.coal_db = self._prepare_coal_properties(self.coal_db)
+
     def _load_resources(self):
         """Load coal database, scaler, and models"""
         try:
             # Load coal database
-            self.coal_db = self._load_coal_database()
-            self.coal_db = self._feature_engineering(self.coal_db)
-            self.coal_db = self._prepare_coal_properties(self.coal_db)
+            self._reload_coal_data()
 
             # Load scaler
             # with open(self.scaler_path, "rb") as f:
@@ -77,7 +84,51 @@ class CoalBlendPredictor:
         return s
 
     def _load_coal_database(self):
-        """Load and prepare coal properties database"""
+        """Load and prepare coal properties database from SQL"""
+        try:
+            load_dotenv()
+            database_url = os.getenv("DATABASE_URL")
+            
+            if not database_url:
+                print("⚠️ No DATABASE_URL found, falling back to CSV")
+                return self._load_from_csv()
+
+            engine = create_engine(database_url)
+            query = "SELECT * FROM coal_properties_clean"
+            df = pd.read_sql(query, engine)
+            
+            # Map DB columns to expected names
+            rename_map = {
+                'coal_name': 'Name_of_coal',
+                'coal_category': 'Coal Category',
+                'MaxFluidity': 'Max. Fluidity ddpm',
+                'VM': 'V.M.',
+                'FC': 'F.C',
+                'IM': 'Inherent Moisture',
+                'S': 'Total Sulphur',
+                'P': 'Phosphorus',
+                'CSN_FSI': 'CSN/FSI'
+            }
+            df = df.rename(columns=rename_map)
+            
+            # Clean column names
+            df.columns = df.columns.str.strip()
+            df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)
+            
+            # Fill missing values
+            df = df.fillna(0)
+            
+            # Create normalized name column for matching
+            df['__norm_name'] = df['Name_of_coal'].map(self._normalize_name)
+            
+            return df
+
+        except Exception as e:
+            print(f"Error loading from DB: {e}, falling back to CSV")
+            return self._load_from_csv()
+
+    def _load_from_csv(self):
+        """Fallback to loading from CSV"""
         df = pd.read_csv(self.coal_db_path)
 
         # Clean column names
@@ -276,6 +327,9 @@ class CoalBlendPredictor:
 
         if verbose:
             print("🔮 Starting prediction...")
+
+        # Reload data to ensure freshness
+        self._reload_coal_data()
 
         # Validate total ratio
         total_ratio = sum(coal_inputs.values())

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, Save } from "lucide-react"
+import toast, { Toaster } from "react-hot-toast"
 
 const ModelConfiguration = ({ onBack }) => {
   // Model Configuration tab state
@@ -42,7 +43,7 @@ const ModelConfiguration = ({ onBack }) => {
     { key: "cri", label: "CRI", selected: false, min: "0", max: "35" },
     { key: "fc", label: "FC", selected: false, min: "80", max: "100" },
     { key: "sulphur", label: "Sulphur", selected: false, min: "0", max: "0.8" },
-    { key: "ash", label: "Ash", selected: false, min: "0", max: "12" }, 
+    { key: "ash", label: "Ash", selected: false, min: "0", max: "12" },
   ])
 
   const handleObjectiveParameterChange = (index, field, value) => {
@@ -78,11 +79,12 @@ const ModelConfiguration = ({ onBack }) => {
       constraints,
     })
     // Add your save logic here
-    alert("Configuration saved successfully!")
+    toast.success("Configuration saved successfully!")
   }
 
   return (
     <div className="bg-gray-50 p-3 min-h-screen">
+      <Toaster position="top-right" />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-3 p-3">
@@ -118,31 +120,28 @@ const ModelConfiguration = ({ onBack }) => {
             <div className="flex space-x-8">
               <button
                 onClick={() => setActiveConfigTab("objective")}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeConfigTab === "objective"
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeConfigTab === "objective"
                     ? "border-gray-800 text-gray-800"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Objective Parameters
               </button>
               <button
                 onClick={() => setActiveConfigTab("controllable")}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeConfigTab === "controllable"
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeConfigTab === "controllable"
                     ? "border-gray-800 text-gray-800"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Controllable Parameters
               </button>
               <button
                 onClick={() => setActiveConfigTab("constraints")}
-                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeConfigTab === "constraints"
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeConfigTab === "constraints"
                     ? "border-gray-800 text-gray-800"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+                  }`}
               >
                 Constraints
               </button>
@@ -251,7 +250,7 @@ const ModelConfiguration = ({ onBack }) => {
                   <div className="flex items-center">
                     <span>Constraint</span>
                   </div>
-                 <div></div>
+                  <div></div>
                   <div className="text-center">Min</div>
                   <div className="text-center">Max</div>
                 </div>

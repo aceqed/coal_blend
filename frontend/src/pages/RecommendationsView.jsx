@@ -4,6 +4,7 @@ import { ArrowLeft, Download, Filter, BarChart3 } from "lucide-react";
 import PageLayout from "../Layout/pageLayout";
 import { useRef } from "react";
 import React from "react";
+import toast, { Toaster } from "react-hot-toast";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "../animations.css";
@@ -23,7 +24,7 @@ const getCategoryColor = (category) => {
 
 // Helper function to adjust brightness
 const adjustBrightness = (color, amount) => {
-  const num = parseInt(color.replace("#",""), 16);
+  const num = parseInt(color.replace("#", ""), 16);
   const r = Math.min(255, Math.max(0, (num >> 16) + amount));
   const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
   const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
@@ -77,13 +78,12 @@ const RecommendationsView = ({ simulation, onBack }) => {
 
       // Save the PDF
       pdf.save(
-        `Coal_Blend_Recommendations_${
-          new Date().toISOString().split("T")[0]
+        `Coal_Blend_Recommendations_${new Date().toISOString().split("T")[0]
         }.pdf`
       );
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
       // Restore button state
       if (button) {
@@ -195,6 +195,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
 
   return (
     <PageLayout title="Recommendation">
+      <Toaster position="top-right" />
       <div
         ref={pdfRef}
         className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
@@ -369,7 +370,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                 </div>
               </div>
             </div>
-                        <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-2 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md">
@@ -435,7 +436,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
             </div>
           </div>
 
-      
+
           {/* Recommendations Grid - Compact Split Layout */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
             <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -514,9 +515,8 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                 {blend.coals.map((coal, coalIndex) => (
                                   <div
                                     key={coalIndex}
-                                    className={`${
-                                      coalColors[coalIndex % coalColors.length]
-                                    } flex items-center justify-center text-white text-xs font-medium transition-all duration-300 hover:opacity-80`}
+                                    className={`${coalColors[coalIndex % coalColors.length]
+                                      } flex items-center justify-center text-white text-xs font-medium transition-all duration-300 hover:opacity-80`}
                                     style={{ width: `${coal.percentage}%` }}
                                     title={`${coal.name}: ${coal.percentage}%`}
                                   >
@@ -532,19 +532,17 @@ const RecommendationsView = ({ simulation, onBack }) => {
                               {blend.coals.map((coal, coalIndex) => (
                                 <div
                                   key={coalIndex}
-                                  className={`flex items-center justify-between p-2 bg-gray-50 rounded-md transition-all duration-200 ${
-                                    hoveredCategory && coal.category === hoveredCategory
+                                  className={`flex items-center justify-between p-2 bg-gray-50 rounded-md transition-all duration-200 ${hoveredCategory && coal.category === hoveredCategory
                                       ? 'ring-2 ring-green-500 bg-green-50 shadow-md'
                                       : ''
-                                  }`}
+                                    }`}
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
-                                      className={`w-3 h-3 ${
-                                        coalColors[
-                                          coalIndex % coalColors.length
+                                      className={`w-3 h-3 ${coalColors[
+                                        coalIndex % coalColors.length
                                         ]
-                                      } rounded-full`}
+                                        } rounded-full`}
                                     ></div>
                                     <span className="text-sm font-medium text-gray-800 truncate">
                                       {coal.name}
@@ -654,16 +652,16 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                   {/* Interactive Category Bars */}
                                   <div className="space-y-2">
                                     {chartData.map((item) => (
-                                      <div 
-                                        key={item.name} 
+                                      <div
+                                        key={item.name}
                                         className="group hover:translate-x-1 transition-transform duration-200 cursor-pointer"
                                         onMouseEnter={() => setHoveredCategory(item.name)}
                                         onMouseLeave={() => setHoveredCategory(null)}
                                       >
                                         <div className="flex justify-between items-center text-sm mb-1">
                                           <div className="flex items-center gap-2">
-                                            <div 
-                                              className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white" 
+                                            <div
+                                              className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white"
                                               style={{ backgroundColor: item.fill }}
                                             ></div>
                                             <span className="font-semibold text-gray-700">{item.name}</span>
@@ -673,9 +671,9 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                           </span>
                                         </div>
                                         <div className="relative w-full h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-                                          <div 
+                                          <div
                                             className="absolute h-full rounded-full transition-all duration-500 ease-out shadow-sm"
-                                            style={{ 
+                                            style={{
                                               width: `${item.value}%`,
                                               background: `linear-gradient(90deg, ${item.fill}, ${adjustBrightness(item.fill, 20)})`
                                             }}
@@ -693,8 +691,8 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                     <div className="flex flex-wrap gap-2">
                                       {['HCC', 'SHCC', 'HFCC', 'PCI', 'WC'].map((cat) => (
                                         <div key={cat} className="flex items-center gap-1 px-2 py-1 bg-white rounded-full text-xs border border-gray-200">
-                                          <div 
-                                            className="w-2 h-2 rounded-full" 
+                                          <div
+                                            className="w-2 h-2 rounded-full"
                                             style={{ backgroundColor: getCategoryColor(cat) }}
                                           ></div>
                                           <span className="font-medium text-gray-600">{cat}</span>

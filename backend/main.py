@@ -292,6 +292,9 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
     input_data = {blend.coal_name: blend.percentage for blend in prediction_input.blends}
     coke_prediction = coal_blend_predictor.predict(input_data)
 
+    if coke_prediction.get("status") == "error":
+        raise HTTPException(status_code=400, detail=f"Prediction Error: {coke_prediction.get('error_message')}")
+
     enhanced_blend_properties = inference_results["final_features"]
     
     predicted_coal_properties = {
@@ -311,7 +314,8 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
         "ASH": coke_prediction.get("predictions",{}).get("ASH", 0.0),
         "VM":  coke_prediction.get("predictions",{}).get("VM", 0.0),
     }
-    
+    print("predicted_coke_properties",predicted_coke_properties)
+
     return schemas.PredictionOutput(
         blend_properties=enhanced_blend_properties,
         predicted_coke_properties=predicted_coke_properties,
@@ -892,6 +896,217 @@ def update_vendor_coal(
         "message": f"Coal {vendor_coal.id} updated successfully",
         "data": vendor_coal.__dict__
     } 
+    
+@app.delete("/api/vendor_coals/{coal_id}")
+def delete_vendor_coal(
+    coal_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    try:
+        vendor_coal = db.query(models.VendorCoalData).filter_by(id=coal_id).first()
+        if not vendor_coal:
+            raise HTTPException(status_code=404, detail="Coal not found")
+    
+        sim_data = {
+                "id": sim.id,
+                "name": sim.scenario_name,
+                "description": sim.scenario_description,
+                "status": latest_update.status if latest_update else sim.status,
+                "created_at": sim.generated_date.isoformat(),
+                "updated_at": sim.generated_date.isoformat(),  # Using generated_date as updated_at for now
+                "progress": latest_update.progress if latest_update else 0,
+                "message": latest_update.message if latest_update else ""
+            }
+            
+                # Add recommendations if available
+        if sim.status == "completed" and sim.recommendations:
+            sim_data["has_recommendations"] = True
+                
+        result.append(sim_data)
+            
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error in get_simulations_batch: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Vendor Coal Routes
+def extract_html_from_pdf(pdf_path: Path) -> str:
+    """Extract HTML-formatted text from all pages of a PDF (without <img> tags)."""
+    html_content = ""
+    with fitz.open(pdf_path) as doc:
+        for page_num, page in enumerate(doc, start=1):
+            page_html = page.get_text("html")
+            soup = BeautifulSoup(page_html, "html.parser")
+            for img_tag in soup.find_all("img"):
+                img_tag.decompose()
+            html_content += f"<!-- Page {page_num} -->\n{str(soup)}\n\n"
+    return html_content
+
+def extract_json_with_gemini(text: str, json_schema: dict) -> str:
+    system_prompt = f"""
+        You are a precise data extraction assistant.
+        Extract all values from the provided PDF text according to the following JSON schema:
+        {json_schema}
+        Fill missing values with null.
+        Only output valid JSON, no extra text, and no markdown formatting.
+        Strictly follow the schema.
+    """
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": system_prompt},
+                    {"text": "Please read the following:\n" + text}
+                ]
+            }
+        ],
+        "generationConfig": {
+            "maxOutputTokens": 8192
+        }
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": GEMINI_API_KEY
+    }
+
+    with httpx.Client(timeout=120.0) as client:
+        resp = client.post(GEMINI_ENDPOINT, headers=headers, json=payload)
+        resp.raise_for_status()
+        result = resp.json()
+
+    raw_output = result["candidates"][0]["content"]["parts"][0]["text"]
+    cleaned_output = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL)
+    cleaned_output = re.sub(r"```json\s*", "", cleaned_output)
+    cleaned_output = re.sub(r"```", "", cleaned_output)
+
+    return cleaned_output.strip()
+
+@app.post("/api/coal/upload", response_model=schemas.CoalPDFUploadResponse)
+async def upload_coal_pdf(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    if not file.filename.lower().endswith('.pdf'):
+        return {
+            "success": False,
+            "message": "Invalid file type",
+            "error": "Only PDF files are allowed"
+        }
+
+    temp_pdf = Path("temp") / file.filename
+    temp_pdf.parent.mkdir(exist_ok=True)
+    with open(temp_pdf, "wb") as f:
+        f.write(await file.read())
+
+    raw_text = extract_html_from_pdf(temp_pdf)
+    json_str = extract_json_with_gemini(raw_text, schemas.VendorCoalDataSchema.model_json_schema())
+
+    try:
+        parsed = json.loads(json_str)
+        validated = schemas.VendorCoalDataSchema(**parsed)
+        vendor_coal = models.VendorCoalData(**validated.dict(), is_approved=False)
+        db.add(vendor_coal)
+        db.commit()
+        db.refresh(vendor_coal)
+
+        return {
+            "success": True,
+            "message": "Coal PDF processed and stored successfully",
+            "coal_data": validated.model_dump()
+        }
+
+    except json.JSONDecodeError:
+        return {
+            "success": False,
+            "message": "Failed to parse JSON",
+            "error": json_str
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": "Validation/DB insert failed",
+            "error": str(e)
+        }
+
+@app.get("/api/vendor_coals")
+def list_vendor_coals(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    coals = db.query(models.VendorCoalData).all()
+    return {"success": True, "data": [coal.__dict__ for coal in coals]}
+
+@app.post("/api/vendor_coals/{coal_id}/approve")
+def approve_vendor_coal(coal_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    vendor_coal = db.query(models.VendorCoalData).filter_by(id=coal_id).first()
+    if not vendor_coal or vendor_coal.is_approved: return {"success": False, "message": "Invalid request"}
+    
+    vendor_coal.is_approved = True
+    db.add(vendor_coal)
+    
+    master_coal = models.CoalProperties(
+        coal_name=vendor_coal.coal_name, IM=vendor_coal.IM, Ash=vendor_coal.Ash, VM=vendor_coal.VM, FC=vendor_coal.FC,
+        S=vendor_coal.S, P=vendor_coal.P, SiO2=vendor_coal.SiO2, Al2O3=vendor_coal.Al2O3, Fe2O3=vendor_coal.Fe2O3,
+        CaO=vendor_coal.CaO, MgO=vendor_coal.MgO, Na2O=vendor_coal.Na2O, K2O=vendor_coal.K2O, TiO2=vendor_coal.TiO2,
+        Mn3O4=vendor_coal.Mn3O4, SO3=vendor_coal.SO3, P2O5=vendor_coal.P2O5, BaO=vendor_coal.BaO, SrO=vendor_coal.SrO,
+        ZnO=vendor_coal.ZnO, CRI=vendor_coal.CRI, CSR=vendor_coal.CSR, N=vendor_coal.N, HGI=vendor_coal.HGI,
+        Vitrinite=vendor_coal.Vitrinite, Liptinite=vendor_coal.Liptinite, Semi_Fusinite=vendor_coal.Semi_Fusinite,
+        CSN_FSI=vendor_coal.CSN_FSI, Initial_Softening_Temp=vendor_coal.Initial_Softening_Temp, MBI=vendor_coal.MBI,
+        CBI=vendor_coal.CBI, Log_Max_Fluidity=vendor_coal.Log_Max_Fluidity, coal_category=vendor_coal.coal_category,
+        C=vendor_coal.C, H=vendor_coal.H, O=vendor_coal.O, V7=vendor_coal.V7, V8=vendor_coal.V8, V9=vendor_coal.V9,
+        V10=vendor_coal.V10, V11=vendor_coal.V11, V12=vendor_coal.V12, V13=vendor_coal.V13, V14=vendor_coal.V14,
+        V15=vendor_coal.V15, V16=vendor_coal.V16, V17=vendor_coal.V17, V18=vendor_coal.V18, V19=vendor_coal.V19,
+        Inertinite=vendor_coal.Inertinite, Minerals=vendor_coal.Minerals, MaxFluidity=vendor_coal.MaxFluidity
+    )
+    db.add(master_coal)
+    db.commit()
+    return {"success": True, "message": "Coal approved", "data": vendor_coal.__dict__}
+@app.patch("/api/vendor_coals/{coal_id}")
+def update_vendor_coal(
+    coal_id: int,
+    payload: schemas.VendorCoalUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # fetch vendor coal
+    vendor_coal = db.query(models.VendorCoalData).filter_by(id=coal_id).first()
+    if not vendor_coal:
+        raise HTTPException(status_code=404, detail="Coal not found")
+
+    if vendor_coal.is_approved:
+        raise HTTPException(status_code=400, detail="Approved coals cannot be modified")
+
+    # apply updates dynamically
+    update_data = payload.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(vendor_coal, key, value)
+
+    db.add(vendor_coal)
+    db.commit()
+    db.refresh(vendor_coal)
+
+    return {
+        "success": True,
+        "message": f"Coal {vendor_coal.id} updated successfully",
+        "data": vendor_coal.__dict__
+    } 
+    
+@app.delete("/api/vendor_coals/{coal_id}")
+def delete_vendor_coal(
+    coal_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    vendor_coal = db.query(models.VendorCoalData).filter_by(id=coal_id).first()
+    if not vendor_coal:
+        raise HTTPException(status_code=404, detail="Coal not found")
+    
+    db.delete(vendor_coal)
+    db.commit()
+    
+    return {"success": True, "message": f"Coal {coal_id} deleted successfully"}
 
 @app.post("/api/vendor-coal/manual", response_model=schemas.VendorCoalDataCreate)
 def create_vendor_coal_manual(
@@ -916,7 +1131,12 @@ async def get_available_coals(db: Session = Depends(get_db)):
         logger.error(f"Error fetching available coals: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching coals: {str(e)}")
 
-    
+@app.get("/api/master_coals")
+def list_master_coals(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Get list of all approved (master) coals"""
+    coals = db.query(models.CoalProperties).all()
+    return {"success": True, "data": [coal.__dict__ for coal in coals]}
+
 if __name__ == "__main__":
     import uvicorn
     logger.info("Starting server...")

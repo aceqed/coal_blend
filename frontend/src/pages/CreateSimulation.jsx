@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { ArrowLeft, Plus, Trash2, Save, Loader } from "lucide-react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 
 const CreateSimulation = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState("properties");
@@ -233,7 +234,7 @@ const CreateSimulation = ({ onBack }) => {
         error.message ||
         "Failed to create simulation. Please try again.";
       setError(errorMessage);
-      alert(`Error: ${errorMessage}`);
+      toast.error(`Error: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
       setIsProcessing(false);
@@ -265,6 +266,7 @@ const CreateSimulation = ({ onBack }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-3">
+      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-2 p-2">
@@ -314,21 +316,19 @@ const CreateSimulation = ({ onBack }) => {
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveTab("properties")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === "properties"
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "properties"
                   ? "border-blue-500 text-blue-600 bg-blue-50"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               📋 Properties
             </button>
             <button
               onClick={() => setActiveTab("output")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === "output"
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "output"
                   ? "border-blue-500 text-blue-600 bg-blue-50"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+                }`}
             >
               📊 Output
             </button>
@@ -616,22 +616,22 @@ const CreateSimulation = ({ onBack }) => {
                       )}
 
                     {/* Properties Summary */}
-                      {/* Coke Properties */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                          Coke Properties
-                        </h3>
-                        <div className="space-y-2">
-                          {simulationResponse.coke_properties?.map((prop, index) => (
-                            <div key={index} className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">{prop.property_name}</span>
-                              <span className="text-sm text-gray-900">
-                                {prop.min_value} - {prop.max_value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Coke Properties */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                        Coke Properties
+                      </h3>
+                      <div className="space-y-2">
+                        {simulationResponse.coke_properties?.map((prop, index) => (
+                          <div key={index} className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">{prop.property_name}</span>
+                            <span className="text-sm text-gray-900">
+                              {prop.min_value} - {prop.max_value}
+                            </span>
+                          </div>
+                        ))}
                       </div>
+                    </div>
 
                   </>
                 )}
