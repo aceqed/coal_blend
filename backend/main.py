@@ -275,17 +275,6 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
         raise HTTPException(status_code=500, detail="Inference engines not initialized")
 
     total_percentage = sum(blend.percentage for blend in prediction_input.blends)
-@app.get("/users/me", response_model=schemas.User)
-async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
-    return current_user
-
-# Prediction Route (Single Blend)
-@app.post("/predict")
-async def predict_blend(prediction_input: schemas.PredictionInput, db: Session = Depends(get_db)):
-    if not inference_engine or not coal_blend_predictor:
-        raise HTTPException(status_code=500, detail="Inference engines not initialized")
-
-    total_percentage = sum(blend.percentage for blend in prediction_input.blends)
     if abs(total_percentage - 100) > 0.01:
         raise HTTPException(status_code=400, detail="Total percentage must equal 100%")
 
