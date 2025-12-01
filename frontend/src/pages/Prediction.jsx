@@ -270,7 +270,7 @@ function Prediction() {
         {panels.map((panel) => (
           <div key={panel.id} className="flex flex-col">
             {/* Coal Selection Panel - Enhanced */}
-            <div className="bg-white rounded-2xl border-2 border-blue-200 overflow-hidden mb-6 shadow-xl hover:shadow-2xl transition-shadow">
+            <div className="bg-white rounded-2xl border-2 border-blue-200 overflow-visible mb-6 shadow-xl hover:shadow-2xl transition-shadow">
               <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4 flex justify-between items-center">
                 <h2 className="font-bold text-white text-lg">Blend {panel.id}</h2>
                 {panels.length > 1 && (
