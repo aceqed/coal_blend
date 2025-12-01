@@ -296,7 +296,7 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
         raise HTTPException(status_code=400, detail=f"Prediction Error: {coke_prediction.get('error_message')}")
 
     enhanced_blend_properties = inference_results["final_features"]
-    
+    import math
     predicted_coal_properties = {
         "ASH": enhanced_blend_properties.get("ASH", 0.0)/100,
         "VM": enhanced_blend_properties.get("VM", 0.0)/100,
@@ -305,7 +305,11 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
         "N": (enhanced_blend_properties.get("weighted_N", 0.0)/100),
         "S": float(enhanced_blend_properties.get("weighted_S", 0.0)/ 100 ),
         "P": float(enhanced_blend_properties.get("weighted_Phosphorus", 0.0) / 100),
-        "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100)
+        "C": float(enhanced_blend_properties.get("weighted_C",0.0)/100),
+        "Fluidity": 10 **  (enhanced_blend_properties.get("weighted_Log_Max_Fluidity", 0.0)/100), # todo add antilog 
+        "Rank": enhanced_blend_properties.get("weighted_Rank", 0.0)/100,
+
+
     }
     
     predicted_coke_properties = {
