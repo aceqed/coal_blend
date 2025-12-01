@@ -88,8 +88,26 @@ function Prediction() {
   };
 
   // Handle changing the number of coals for a specific panel
+  // Handle changing the number of coals for a specific panel
   const handleNumCoalsChange = (panelId, e) => {
     const num = Number.parseInt(e.target.value) || "";
+
+    // Clear search inputs for added/removed coals to prevent stuck values
+    setSearchInputs((prev) => {
+      const next = { ...prev };
+      const panel = panels.find((p) => p.id === panelId);
+
+      if (panel) {
+        // Determine range of indices to clear (from current count + 1 up to new count, or vice versa)
+        const start = Math.min(panel.coalSelections.length, num) + 1;
+        const end = Math.max(panel.coalSelections.length, num);
+
+        for (let i = start; i <= end; i++) {
+          delete next[`${panelId}-${i}`];
+        }
+      }
+      return next;
+    });
 
     setPanels(
       panels.map((panel) => {
