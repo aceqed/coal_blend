@@ -65,6 +65,9 @@ class BoilerPredictor:
             
             # Map DB fields to what we need
             # DB: TM, IM, Ash, VM, FC, GCV, GCV_ARB
+            # Debug: print all coal properties
+            print(f"Coal: {blend.coal_name}")
+            print(f"Properties: {vars(coal)}")
             avg_props["TM"] += get_val(coal, "TM") * ratio
             avg_props["IM"] += get_val(coal, "IM") * ratio
             avg_props["Ash"] += get_val(coal, "Ash") * ratio
@@ -86,12 +89,18 @@ class BoilerPredictor:
         # Order must match training: 
         # 'Load', 'feed water temperature', 'Running plant load factor', 'Air to fuel ratio for mill',
         # 'TM_WA', 'IM_WA', 'ASH_WA', 'VM_WA', 'FC_WA', 'GCV_WA', 'GCV (ARB)_WA'
+        print({
+      
+            'TM_WA': wa["TM"],
+            'IM_WA': wa["IM"],
+            'ASH_WA': wa["Ash"],
+            'VM_WA': wa["VM"],
+            'FC_WA': wa["FC"],
+            'GCV_WA': wa["GCV"],
+            'GCV (ARB)_WA': wa["GCV_ARB"]
+        })
         
         input_data = pd.DataFrame([{
-            'Load': boiler_params.load,
-            'feed water temperature': boiler_params.feed_water_temp,
-            'Running plant load factor': boiler_params.running_plant_load_factor,
-            'Air to fuel ratio for mill': boiler_params.air_to_fuel_ratio,
             'TM_WA': wa["TM"],
             'IM_WA': wa["IM"],
             'ASH_WA': wa["Ash"],
@@ -108,6 +117,7 @@ class BoilerPredictor:
         if self.models.get("boiler_eff"):
             try:
                 pred = self.models["boiler_eff"].predict(input_data)
+                print("Boiler efficiency prediction:",pred)
                 results["boiler_efficiency"] = float(pred[0])
             except Exception as e:
                 print(f"Prediction error (Efficiency): {e}")
@@ -117,6 +127,7 @@ class BoilerPredictor:
         if self.models.get("nox"):
             try:
                 pred = self.models["nox"].predict(input_data)
+                print("NOx prediction:",pred)
                 results["nox"] = float(pred[0])
             except Exception as e:
                 print(f"Prediction error (NOx): {e}")
@@ -126,6 +137,7 @@ class BoilerPredictor:
         if self.models.get("ubc_ba"):
             try:
                 pred = self.models["ubc_ba"].predict(input_data)
+                print("UBC BA prediction:",pred)
                 results["ubc_ba"] = float(pred[0])
             except Exception as e:
                 print(f"Prediction error (UBC BA): {e}")
@@ -135,6 +147,7 @@ class BoilerPredictor:
         if self.models.get("ubc_fa"):
             try:
                 pred = self.models["ubc_fa"].predict(input_data)
+                print("UBC FA prediction:",pred)
                 results["ubc_fa"] = float(pred[0])
             except Exception as e:
                 print(f"Prediction error (UBC FA): {e}")
@@ -146,7 +159,7 @@ class BoilerPredictor:
 
         return results
 
-    def batch_predict(self, population: np.ndarray, boiler_params_list: list, coal_properties: list, coal_names: list) -> tuple:
+    def batch_predict(self, population: np.ndarray, coal_properties: list, coal_names: list) -> tuple:
         """
         Batch prediction for entire population at once.
         
@@ -182,12 +195,7 @@ class BoilerPredictor:
         # Build input DataFrame for all individuals at once
         input_rows = []
         for idx in range(pop_size):
-            bp = boiler_params_list[idx]
             input_rows.append({
-                'Load': bp["Load"],
-                'feed water temperature': bp["feed_water_temp"],
-                'Running plant load factor': bp["running_plant_load_factor"],
-                'Air to fuel ratio for mill': bp["air_to_fuel_ratio"],
                 'TM_WA': weighted_props[idx, 0],
                 'IM_WA': weighted_props[idx, 1],
                 'ASH_WA': weighted_props[idx, 2],

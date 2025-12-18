@@ -59,10 +59,6 @@ class BoilerGA:
             
         return {
             "coal_ratios": ratios,
-            "Load": random.uniform(80, 95),
-            "feed_water_temp": random.uniform(210, 240),
-            "running_plant_load_factor": random.uniform(85, 95),
-            "air_to_fuel_ratio": random.uniform(1.8, 2.3)
         }
 
     def batch_fitness(self, population, coal_properties_list):
@@ -79,17 +75,11 @@ class BoilerGA:
         for i, ind in enumerate(population):
             ind["coal_ratios"] = self.enforce_max_coals(ind["coal_ratios"])
             pop_matrix[i] = ind["coal_ratios"]
-            boiler_params_list.append({
-                "Load": ind["Load"],
-                "feed_water_temp": ind["feed_water_temp"],
-                "running_plant_load_factor": ind["running_plant_load_factor"],
-                "air_to_fuel_ratio": ind["air_to_fuel_ratio"]
-            })
+        
         
         # Batch predict
         preds = self.predictor.batch_predict(
             pop_matrix, 
-            boiler_params_list, 
             coal_properties_list, 
             self.coal_names
         )
@@ -131,10 +121,6 @@ class BoilerGA:
         
         return {
             "coal_ratios": ratios,
-            "Load": random.choice([p1["Load"], p2["Load"]]),
-            "feed_water_temp": random.choice([p1["feed_water_temp"], p2["feed_water_temp"]]),
-            "running_plant_load_factor": random.choice([p1["running_plant_load_factor"], p2["running_plant_load_factor"]]),
-            "air_to_fuel_ratio": random.choice([p1["air_to_fuel_ratio"], p2["air_to_fuel_ratio"]])
         }
 
     def mutate(self, ind, rate=0.1):
@@ -147,15 +133,7 @@ class BoilerGA:
                 ratios[idx] = raw[i]
             ind["coal_ratios"] = ratios
             
-        # Parameter Mutation
-        if random.random() < rate:
-             ind["Load"] = random.uniform(80, 95)
-        if random.random() < rate:
-             ind["feed_water_temp"] = random.uniform(210, 240)
-        if random.random() < rate:
-             ind["running_plant_load_factor"] = random.uniform(85, 95)
-        if random.random() < rate:
-             ind["air_to_fuel_ratio"] = random.uniform(1.8, 2.3)
+\
         
         ind["coal_ratios"] = self.enforce_max_coals(ind["coal_ratios"])
         return ind
@@ -266,12 +244,6 @@ class BoilerGA:
                     "rank": len(top_blends) + 1,
                     "score": float(score),
                     "composition": composition,
-                    "boiler_params": {
-                        "load": ind["Load"],
-                        "feed_water_temp": ind["feed_water_temp"],
-                        "running_plant_load_factor": ind["running_plant_load_factor"],
-                        "air_to_fuel_ratio": ind["air_to_fuel_ratio"]
-                    },
                     "predictions": preds,
                     "weighted_props": w_props
                 })

@@ -45,7 +45,7 @@ const CreateSimulation = ({ onBack }) => {
 
   const configurations = [
     "Boiler Optimization",
-    "Standard Coal Blend Configuration",
+    "Standard Efficiency Configuration",
     "High Quality Coke Configuration",
     "Low Ash Configuration",
     "Custom Configuration",
@@ -283,7 +283,7 @@ const CreateSimulation = ({ onBack }) => {
             <div>
               <h1 className="text-base font-bold text-gray-800">Create New Simulation</h1>
               <p className="text-xs text-gray-600">
-                Configure your coal blend simulation parameters
+                Configure your Efficiency simulation parameters
               </p>
             </div>
           </div>
@@ -370,7 +370,7 @@ const CreateSimulation = ({ onBack }) => {
                       <textarea
                         value={scenarioDescription}
                         onChange={(e) => setScenarioDescription(e.target.value)}
-                        placeholder="Provide a detailed description of your coal blending scenario"
+                        placeholder="Provide a detailed description of your Efficiencying scenario"
                         rows={2}
                         className="w-full px-2 py-1 text-sm text-gray-900 font-medium border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm placeholder-gray-400 resize-none"
                       />

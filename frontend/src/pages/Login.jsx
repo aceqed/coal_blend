@@ -228,7 +228,7 @@ const Login = () => {
           <span className="font-bold text-yellow-500 text-xl drop-shadow-sm">QED</span>
           <span className="font-bold text-gray-700 text-xl drop-shadow-sm">Analytics</span>
         </div>
-        <p className="mt-1 text-gray-500 text-xs">Coal Blend Optimization Platform</p>
+        <p className="mt-1 text-gray-500 text-xs">Efficiency Optimization Platform</p>
       </div>
     </div>
   );

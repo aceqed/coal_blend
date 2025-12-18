@@ -704,19 +704,14 @@ async def run_boiler_optimization(simulation_id: int, simulation_data: dict, db:
 
         # 5. Get Top 5 Blends and store them
         top_blends = ga.get_top_blends(coal_data, n=5)
-        
+        print(top_blends)
         for blend in top_blends:
             composition = blend["composition"]
-            bp = blend["boiler_params"]
             preds = blend["predictions"]
             w_props = blend["weighted_props"]
             
             # Build boiler_params with nested predictions  
             boiler_params = {
-                "load": bp["load"],
-                "feed_water_temp": bp["feed_water_temp"],
-                "running_plant_load_factor": bp["running_plant_load_factor"],
-                "air_to_fuel_ratio": bp["air_to_fuel_ratio"],
                 "predictions": {
                     "efficiency": preds.get("boiler_efficiency", 0),
                     "nox": preds.get("nox", 0),

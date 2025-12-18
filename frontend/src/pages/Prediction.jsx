@@ -306,9 +306,9 @@ function Prediction() {
         <div>
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <BarChart className="h-6 w-6 text-blue-600" />
-            Coal Blend Predictions
+            Efficiency Predictions
           </h2>
-          <p className="text-sm text-gray-600 mt-1">Create and analyze multiple coal blends</p>
+          <p className="text-sm text-gray-600 mt-1">Create and analyze multiple Efficiencys</p>
         </div>
         <button
           onClick={addPanel}
@@ -337,50 +337,6 @@ function Prediction() {
               </div>
               <div className="p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
                 {/* Boiler Parameters - Per Blend */}
-                <div className="bg-orange-50 rounded-xl p-4 mb-5 border border-orange-200">
-                  <h3 className="text-sm font-bold text-orange-800 mb-3 flex items-center">
-                    <span className="mr-1">🏭</span> Boiler Parameters
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">Load</label>
-                      <input
-                        type="number"
-                        value={panel.boilerParams.load}
-                        onChange={(e) => handleBoilerParamChange(panel.id, "load", e.target.value)}
-                        className="w-full p-2 text-sm text-black bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">FW Temp</label>
-                      <input
-                        type="number"
-                        value={panel.boilerParams.feed_water_temp}
-                        onChange={(e) => handleBoilerParamChange(panel.id, "feed_water_temp", e.target.value)}
-                        className="w-full p-2 text-sm text-black bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">PL Factor</label>
-                      <input
-                        type="number"
-                        value={panel.boilerParams.running_plant_load_factor}
-                        onChange={(e) => handleBoilerParamChange(panel.id, "running_plant_load_factor", e.target.value)}
-                        className="w-full p-2 text-sm text-black bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-700 mb-1">Air/Fuel</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={panel.boilerParams.air_to_fuel_ratio}
-                        onChange={(e) => handleBoilerParamChange(panel.id, "air_to_fuel_ratio", e.target.value)}
-                        className="w-full p-2 text-sm text-black bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 <div className="mb-5">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">

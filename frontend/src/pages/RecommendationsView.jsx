@@ -222,7 +222,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                     </div>
                     <div>
                       <h1 className="text-lg font-bold text-gray-800">
-                        Coal Blend Recommendations
+                        Efficiency Recommendations
                       </h1>
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
@@ -625,27 +625,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                               </div>
 
                               {/* Operating Parameters */}
-                              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-100">
-                                <div className="text-[10px] text-blue-600 font-medium uppercase mb-1">Operating Parameters</div>
-                                <div className="grid grid-cols-4 gap-1 text-center">
-                                  <div>
-                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.load ? Number(blend.boiler_params.load).toFixed(0) : '-'}</div>
-                                    <div className="text-[8px] text-blue-600">MW</div>
-                                  </div>
-                                  <div className="border-l border-blue-200">
-                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.feed_water_temp ? Number(blend.boiler_params.feed_water_temp).toFixed(0) : '-'}</div>
-                                    <div className="text-[8px] text-blue-600">°C</div>
-                                  </div>
-                                  <div className="border-l border-blue-200">
-                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.running_plant_load_factor ? Number(blend.boiler_params.running_plant_load_factor).toFixed(0) : '-'}</div>
-                                    <div className="text-[8px] text-blue-600">PLF %</div>
-                                  </div>
-                                  <div className="border-l border-blue-200">
-                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.air_to_fuel_ratio ? Number(blend.boiler_params.air_to_fuel_ratio).toFixed(2) : '-'}</div>
-                                    <div className="text-[8px] text-blue-600">A/F</div>
-                                  </div>
-                                </div>
-                              </div>
+
                             </div>
                           )}
                         </div>
