@@ -44,10 +44,10 @@ function DashboardCard({ title, icon, path }) {
 
     return (
       themes[title] || {
-        gradient: "bg-gradient-to-br from-gray-500 to-gray-600",
-        hoverGradient: "hover:from-gray-600 hover:to-gray-800",
+        gradient: "bg-gradient-to-br from-indigo-500 to-indigo-600",
+        hoverGradient: "hover:from-indigo-600 hover:to-indigo-800",
         iconBg: "bg-white/20",
-        shadow: "shadow-gray-100/25",
+        shadow: "shadow-indigo-100/25",
       }
     );
   };

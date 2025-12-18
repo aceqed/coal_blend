@@ -10,7 +10,7 @@ const CreateSimulation = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState("properties");
   const [scenarioName, setScenarioName] = useState("");
   const [scenarioDescription, setScenarioDescription] = useState("");
-  const [selectedConfiguration, setSelectedConfiguration] = useState("");
+  const [selectedConfiguration, setSelectedConfiguration] = useState("Boiler Optimization");
   const [referenceBlendType, setReferenceBlendType] = useState("default");
   const [numberOfCoals, setNumberOfCoals] = useState(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +44,7 @@ const CreateSimulation = ({ onBack }) => {
 
 
   const configurations = [
-    "Choose the Configuration from the List",
+    "Boiler Optimization",
     "Standard Coal Blend Configuration",
     "High Quality Coke Configuration",
     "Low Ash Configuration",
@@ -205,10 +205,13 @@ const CreateSimulation = ({ onBack }) => {
       }
 
       // Step 2: Start the optimization process
-      const startResponse = await api.post(
-        `/simulation/${createResponse.data.id}/start`,
-        simulationData
-      );
+      // Step 2: Start the optimization process
+      const startEndpoint =
+        selectedConfiguration === "Boiler Optimization"
+          ? `/simulation/${createResponse.data.id}/start_boiler`
+          : `/simulation/${createResponse.data.id}/start`;
+
+      const startResponse = await api.post(startEndpoint, simulationData);
 
       console.log("Received start response:", startResponse.data); // Debug log
 
@@ -317,8 +320,8 @@ const CreateSimulation = ({ onBack }) => {
             <button
               onClick={() => setActiveTab("properties")}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "properties"
-                  ? "border-blue-500 text-blue-600 bg-blue-50"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-blue-500 text-blue-600 bg-blue-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
             >
               📋 Properties
@@ -326,8 +329,8 @@ const CreateSimulation = ({ onBack }) => {
             <button
               onClick={() => setActiveTab("output")}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === "output"
-                  ? "border-blue-500 text-blue-600 bg-blue-50"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                ? "border-blue-500 text-blue-600 bg-blue-50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
             >
               📊 Output
@@ -400,49 +403,51 @@ const CreateSimulation = ({ onBack }) => {
 
                 {/* Properties */}
                 <div className="space-y-3">
-                  {/* Coke Properties */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 shadow-sm">
-                    <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                      Coke Properties
-                    </h3>
-                    <div className="space-y-2">
-                      {cokeProperties.map((property) => (
-                        <div
-                          key={property.key}
-                          className="bg-white/70 backdrop-blur-sm rounded-lg p-2 border border-blue-100 hover:shadow-lg hover:shadow-blue-200/50 hover:scale-[1.02] hover:bg-white/90 hover:border-blue-300 transition-all duration-300 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-20 flex-shrink-0">
-                              <span className="text-gray-800 font-semibold text-xs uppercase tracking-wide">
-                                {property.key.replace(/([A-Z])/g, " $1").trim()}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-700 text-xs font-medium">Min</span>
-                              <input
-                                type="number"
-                                value={getCokeValue(property.key, "min")}
-                                onChange={(e) =>
-                                  handleCokePropertyChange(property.key, "min", e.target.value)
-                                }
-                                className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
-                              />
-                              <span className="text-gray-700 text-xs font-medium">Max</span>
-                              <input
-                                type="number"
-                                value={getCokeValue(property.key, "max")}
-                                onChange={(e) =>
-                                  handleCokePropertyChange(property.key, "max", e.target.value)
-                                }
-                                className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
-                              />
+                  {/* Coke Properties - Hidden for Boiler Optimization */}
+                  {selectedConfiguration !== "Boiler Optimization" && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3 shadow-sm">
+                      <h3 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                        Coke Properties
+                      </h3>
+                      <div className="space-y-2">
+                        {cokeProperties.map((property) => (
+                          <div
+                            key={property.key}
+                            className="bg-white/70 backdrop-blur-sm rounded-lg p-2 border border-blue-100 hover:shadow-lg hover:shadow-blue-200/50 hover:scale-[1.02] hover:bg-white/90 hover:border-blue-300 transition-all duration-300 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="w-20 flex-shrink-0">
+                                <span className="text-gray-800 font-semibold text-xs uppercase tracking-wide">
+                                  {property.key.replace(/([A-Z])/g, " $1").trim()}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-700 text-xs font-medium">Min</span>
+                                <input
+                                  type="number"
+                                  value={getCokeValue(property.key, "min")}
+                                  onChange={(e) =>
+                                    handleCokePropertyChange(property.key, "min", e.target.value)
+                                  }
+                                  className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
+                                />
+                                <span className="text-gray-700 text-xs font-medium">Max</span>
+                                <input
+                                  type="number"
+                                  value={getCokeValue(property.key, "max")}
+                                  onChange={(e) =>
+                                    handleCokePropertyChange(property.key, "max", e.target.value)
+                                  }
+                                  className="w-16 px-1 py-1 text-xs text-gray-900 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white hover:border-gray-300 shadow-sm"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Reference Blend */}

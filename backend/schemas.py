@@ -60,6 +60,10 @@ class CoalPropertiesBase(BaseModel):
     MBI: float
     CBI: float
     Log_Max_Fluidity: float
+    # New Boiler Optimization Fields
+    TM: Optional[float] = None
+    GCV: Optional[float] = None
+    GCV_ARB: Optional[float] = None
     coal_category: str      # categorical column
     C: float
     H: float
@@ -83,6 +87,10 @@ class CoalPropertiesBase(BaseModel):
     Inertinite: Optional[float] = None
     Minerals: Optional[float] = None
     MaxFluidity: Optional[float] = None
+    # New Boiler Optimization Fields
+    TM: Optional[float] = None
+    GCV: Optional[float] = None
+    GCV_ARB: Optional[float] = None
 
 
 class CoalPropertiesCreate(CoalPropertiesBase):
@@ -98,13 +106,28 @@ class CoalBlendInput(BaseModel):
     coal_name: str
     percentage: float
 
+class BoilerParams(BaseModel):
+    load: float
+    feed_water_temp: float
+    running_plant_load_factor: float
+    air_to_fuel_ratio: float
+
+class BoilerParams(BaseModel):
+    load: float
+    feed_water_temp: float
+    running_plant_load_factor: float
+    air_to_fuel_ratio: float
+
 class PredictionInput(BaseModel):
     blends: List[CoalBlendInput]
+    boiler_params: Optional[BoilerParams] = None
 
 class PredictionOutput(BaseModel):
     blend_properties: Dict[str, float]
     predicted_coal_properties: Dict[str, float]
     predicted_coke_properties: Dict[str, float]
+    boiler_predictions: Optional[Dict[str, float]] = None
+    boiler_predictions: Optional[Dict[str, float]] = None
 
 class SimulationPropertiesBase(BaseModel):
     property_type: str  # 'coke' or 'blend'
@@ -165,6 +188,7 @@ class BlendRecommendationBase(BaseModel):
     VOC_Emissions: Optional[float] = None
     PAH_Emissions: Optional[float] = None
     total_cost: Optional[float] = None
+    boiler_params: Optional[Dict[str, Any]] = None
    
 
 class BlendRecommendationCreate(BlendRecommendationBase):
@@ -235,6 +259,9 @@ class VendorCoalDataBase(BaseModel):
     Inertinite: Optional[float] = None
     Minerals: Optional[float] = None
     Max_Fluidity_ddpm: Optional[float] = None
+    TM: Optional[float] = None
+    GCV: Optional[float] = None
+    GCV_ARB: Optional[float] = None
     vendor_name: Optional[str] = None
     vendor_email: Optional[EmailStr] = None
     notes: Optional[str] = None
@@ -401,7 +428,11 @@ class VendorCoalDataCreate(BaseModel):
     V19: Optional[float] = None
     Inertinite: Optional[float] = None
     Minerals: Optional[float] = None
+    Minerals: Optional[float] = None
     MaxFluidity: Optional[float] = None
+    TM: Optional[float] = None
+    GCV: Optional[float] = None
+    GCV_ARB: Optional[float] = None
 
     class Config:
         orm_mode = True
@@ -462,4 +493,8 @@ class VendorCoalDataSchema(BaseModel):
     V19: Optional[float] = None
     Inertinite: Optional[float] = None
     Minerals: Optional[float] = None
+    Minerals: Optional[float] = None
     MaxFluidity: Optional[float] = None
+    TM: Optional[float] = None
+    GCV: Optional[float] = None
+    GCV_ARB: Optional[float] = None

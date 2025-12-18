@@ -126,6 +126,8 @@ const SimulationManager = () => {
         );
       } catch (error) {
         console.error("Error in batch fetch:", error);
+        // Fallback to full fetch if batch fails
+        await fetchSimulations();
         return new Set();
       }
     };
@@ -135,6 +137,8 @@ const SimulationManager = () => {
       if (runningSims.size === 0) {
         console.log("No running simulations after initial fetch");
         setPollingSimulations(new Set());
+        // Trigger full refresh to get completed simulation data
+        fetchSimulations();
         return;
       }
     });
@@ -153,11 +157,13 @@ const SimulationManager = () => {
         if (runningSims.size === 0) {
           console.log("No more running simulations, stopping poll");
           clearInterval(pollInterval);
+          // Trigger full refresh to get completed simulation data with recommendations
+          fetchSimulations();
           return new Set();
         }
         return runningSims;
       });
-    }, 3000); // Increased to 30 seconds since we're batching
+    }, 3000); // Poll every 3 seconds
 
     return () => {
       console.log("Cleaning up polling interval");

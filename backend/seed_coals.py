@@ -11,90 +11,87 @@ def seed_coals():
     models.CoalProperties.__table__.drop(engine, checkfirst=True)
     models.CoalProperties.__table__.create(engine)
     
-    print("Reading CSV file...")
+    
+    # Load Boiler Data (Primary Source)
+    print("Reading boiler property data...")
     try:
-        df = pd.read_csv("Clean_exist_coals.csv")
-    except FileNotFoundError:
-        print("Error: Clean_exist_coals.csv not found.")
+        df = pd.read_csv("Boiler_effi_pred/coal_property_data.csv")
+        df.columns = df.columns.str.strip()
+        print(f"Loaded boiler data for {len(df)} coals. Using this as the primary source.")
+    except Exception as e:
+        print(f"Error: Boiler data not found or error: {e}")
         return
 
-    # Clean column names (strip whitespace)
-    df.columns = df.columns.str.strip()
-    
     # Load cost data
     print("Reading cost data...")
     try:
         cost_df = pd.read_csv("reco/coal_costs.csv")
         cost_df.columns = cost_df.columns.str.strip()
-        # Create a dictionary mapping coal name to cost
         cost_map = dict(zip(cost_df['Name_of_coal'].str.strip(), cost_df['Cost']))
         print(f"Loaded cost data for {len(cost_map)} coals")
-    except FileNotFoundError:
-        print("Warning: coal_costs.csv not found. Costs will be set to 0.0")
-        cost_map = {}
     except Exception as e:
         print(f"Warning: Error reading cost data: {e}. Costs will be set to 0.0")
         cost_map = {}
     
-    # Replace NaN with None (or 0.0 for floats if preferred, but SQLAlchemy handles None as NULL)
-    # For this model, most fields are Floats. Let's replace NaN with 0.0 for safety in calculations, 
-    # or None if we want to allow NULLs. The model definition doesn't specify nullable=False for most, 
-    # but calculations might fail with None. Let's use 0.0 for numeric fields.
+    # Replace NaN with 0.0 for numeric fields
     df = df.replace({np.nan: 0.0})
 
     coals = []
+    # Identify the column for Coal Name in the new CSV
+    # Based on previous context it seems to be "Coal_Name"
+    name_col = "Coal_Name" if "Coal_Name" in df.columns else "Name_of_coal"
+    
     for _, row in df.iterrows():
-        coal_name = row.get('Name_of_coal')
-        # Get cost from cost_map, default to 0.0 if not found
-        coal_cost = cost_map.get(coal_name, 0.0)
+        coal_name = row.get(name_col)
+        coal_name_clean = str(coal_name).strip()
+        
+        # Get cost from cost_map
+        coal_cost = cost_map.get(coal_name_clean, 0.0)
+        
+        # In the new logic, the row itself is the boiler data
+        # We need to map the CSV columns to the model
+        # Note: The boiler CSV likely has columns like 'TM', 'IM', 'Ash', 'VM', 'FC', 'GCV', 'GCV (ARB)'
         
         coal = models.CoalProperties(
-            coal_name=coal_name,
-            coal_category=row.get('Coal Category'),
-            Rank=row.get('Rank'),
-            cost=coal_cost,  # Add cost field
+            coal_name=coal_name_clean,
+            coal_category=row.get('Coal Category', 'Thermal'), # Default if missing
+            Rank=row.get('Rank', 0.0), # Assuming float
+            cost=coal_cost,
+            
+            # Boiler Properties (Direct from this CSV)
+            TM=row.get("TM", 0.0),
+            GCV=row.get("GCV", 0.0),
+            GCV_ARB=row.get("GCV (ARB)", 0.0),
             
             # Proximate Analysis
-            IM=0.0, # Not in CSV?
-            Ash=row.get('Ash', 0.0),
-            VM=row.get('V.M.', 0.0),
-            FC=row.get('F.C', 0.0),
-            S=row.get('Total Sulphur', 0.0),
-            P=row.get('Phosphorus', 0.0),
+            IM=row.get("IM", 0.0), 
+            Ash=row.get('Ash', 0.0), # Check case sensitivity if needed, usually 'Ash'
+            VM=row.get('VM', 0.0),   # Usually 'VM' or 'V.M.' in boiler csv? Let's check typical keys
+            FC=row.get('FC', 0.0),   # Usually 'FC' or 'F.C'
+            S=row.get('S', 0.0),
+            P=row.get('P', 0.0),     # Boiler csv might use 'P' or 'Phosphorus'
             
-            # HGI
-            HGI=row.get('HGI (ASTM)', 0.0),
+            # Additional fields (Might be missing in boiler CSV, default to 0.0)
+            HGI=row.get('HGI', 0.0),
             
-            # Petrography
-            Vitrinite=row.get('Vitrinite %', 0.0),
+            # Petrography - likely missing or different columns
+            Vitrinite=row.get('Vitrinite', 0.0),
             Liptinite=row.get('Liptinite', 0.0),
-            Semi_Fusinite=row.get('Semi-Fusinite', 0.0),
+            Semi_Fusinite=row.get('Semi_Fusinite', 0.0),
             Inertinite=row.get('Inertinite', 0.0),
             Minerals=row.get('Minerals', 0.0),
             
             # Reflectance
-            V7=row.get('V7', 0.0),
-            V8=row.get('V8', 0.0),
-            V9=row.get('V9', 0.0),
-            V10=row.get('V10', 0.0),
-            V11=row.get('V11', 0.0),
-            V12=row.get('V12', 0.0),
-            V13=row.get('V13', 0.0),
-            V14=row.get('V14', 0.0),
-            V15=row.get('V15', 0.0),
-            V16=row.get('V16', 0.0),
-            V17=row.get('V17', 0.0),
-            V18=row.get('V18', 0.0),
-            V19=row.get('V19', 0.0),
+            V7=0.0, V8=0.0, V9=0.0, V10=0.0, V11=0.0, V12=0.0, 
+            V13=0.0, V14=0.0, V15=0.0, V16=0.0, V17=0.0, V18=0.0, V19=0.0,
             
             # Coking Properties
-            CSN_FSI=row.get('CSN/FSI', 0.0),
-            Initial_Softening_Temp=row.get('Initial Softening Temp.', 0.0),
-            MaxFluidity=row.get('Max. Fluidity ddpm', 0.0),
-            # Log_Max_Fluidity can be calculated if needed, or left 0
-            Log_Max_Fluidity=np.log10(row.get('Max. Fluidity ddpm', 1.0)) if row.get('Max. Fluidity ddpm', 0.0) > 0 else 0.0,
+            CSN_FSI=row.get('CSN', 0.0), # Boiler CSV might have CSN
+            Initial_Softening_Temp=0.0,
+            MaxFluidity=0.0,
+            Log_Max_Fluidity=0.0,
             
-            # Ash Analysis (Oxides)
+            # Ash Analysis (Oxides) - likely missing or different
             SiO2=row.get('SiO2', 0.0),
             Al2O3=row.get('Al2O3', 0.0),
             Fe2O3=row.get('Fe2O3', 0.0),
@@ -111,22 +108,22 @@ def seed_coals():
             ZnO=row.get('ZnO', 0.0),
             
             # Coke Quality
-            CRI=row.get('CRI', 0.0), # Note: CSV header might have space 'CRI '
-            CSR=row.get('CSR', 0.0),
+            CRI=0.0,
+            CSR=0.0,
             
-            # Ultimate Analysis
+            # Ultimate Analysis (C, H, N, O, S)
             C=row.get('C', 0.0),
             H=row.get('H', 0.0),
             N=row.get('N', 0.0),
             O=row.get('O', 0.0),
             
             # Other
-            ss=0.0, # Not in CSV
-            MBI=0.0, # Not in CSV
-            CBI=0.0  # Not in CSV
+            ss=0.0, 
+            MBI=0.0, 
+            CBI=0.0  
         )
         coals.append(coal)
-
+    
     db = SessionLocal()
     try:
         print(f"Inserting {len(coals)} records...")

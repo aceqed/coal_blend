@@ -75,6 +75,15 @@ class CoalProperties(Base):
     V18 = Column(Float)
     V19 = Column(Float)
     cost = Column(Float)
+    # Additional properties for Boiler Optimization
+    TM = Column(Float)         # Total Moisture
+    GCV = Column(Float)        # Gross Calorific Value
+    GCV_ARB = Column(Float)    # GCV As Received Basis
+    # Additional properties for Boiler Optimization
+    TM = Column(Float)         # Total Moisture
+    GCV = Column(Float)        # Gross Calorific Value
+    GCV_ARB = Column(Float)    # GCV As Received Basis
+
     # Additional properties for CBI and Log Max Fluidity calculations
     Inertinite = Column(Float)
     Minerals = Column(Float)
@@ -196,6 +205,9 @@ class SimulationCoalRecommendations(Base):
 
     # Relationship
     simulation = relationship("Simulation", back_populates="coal_recommendations") 
+    
+    # Store optimized boiler parameters if this recommendation came from Boiler GA
+    boiler_params = Column(JSON, nullable=True) 
 
 class SimulationUpdate(Base):
     __tablename__ = "simulation_updates"

@@ -176,6 +176,8 @@ const RecommendationsView = ({ simulation, onBack }) => {
           VOC_Emissions: rec.VOC_Emissions,
           PAH_Emissions: rec.PAH_Emissions,
           total_cost: rec.total_cost,
+          boiler_params: rec.boiler_params,
+          boiler_predictions: rec.boiler_params?.predictions || {}
         };
       }
 
@@ -371,7 +373,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            {/* <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-2 border-b border-gray-200">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md">
@@ -434,7 +436,7 @@ const RecommendationsView = ({ simulation, onBack }) => {
                   ))}
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
 
 
@@ -560,171 +562,94 @@ const RecommendationsView = ({ simulation, onBack }) => {
                                 </div>
                               ))}
                             </div>
+                          </div>
 
-                            {/* Predicted Properties (Compact) */}
-                            <div className="mt-4 pt-3 border-t border-gray-200">
-                              <h5 className="text-xs font-medium text-gray-600 mb-2">
-                                Predicted Properties
-                              </h5>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-blue-50 p-2 rounded border border-blue-100">
-                                  <div className="text-xs text-blue-600">
-                                    Ash
-                                  </div>
-                                  <div className="text-sm font-bold text-blue-800">
-                                    {blend.predicted.ash_final}%
-                                  </div>
-                                </div>
-                                <div className="bg-green-50 p-2 rounded border border-green-100">
-                                  <div className="text-xs text-green-600">
-                                    VM
-                                  </div>
-                                  <div className="text-sm font-bold text-green-800">
-                                    {blend.predicted.vm_final}%
-                                  </div>
-                                </div>
-                                <div className="bg-purple-50 p-2 rounded border border-purple-100">
-                                  <div className="text-xs text-purple-600">
-                                    CRI
-                                  </div>
-                                  <div className="text-sm font-bold text-purple-800">
-                                    {blend.predicted.cri}%
-                                  </div>
-                                </div>
-                                <div className="bg-orange-50 p-2 rounded border border-orange-100">
-                                  <div className="text-xs text-orange-600">
-                                    CSR
-                                  </div>
-                                  <div className="text-sm font-bold text-orange-800">
-                                    {blend.predicted.csr}%
-                                  </div>
-                                </div>
+                          {/* Right Half: Boiler Optimization Results */}
+                          {blend.boiler_params && (
+                            <div className="p-4 bg-gradient-to-br from-slate-50 to-gray-50">
+                              <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                Boiler Optimization Results
+                              </h4>
 
+                              {/* Efficiency - Hero Metric */}
+                              <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg mb-3">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-green-100 text-xs font-medium uppercase tracking-wider">Boiler Efficiency</div>
+                                    <div className="text-3xl font-bold mt-1">
+                                      {blend.boiler_predictions?.efficiency ? Number(blend.boiler_predictions.efficiency).toFixed(2) : '-'}
+                                      <span className="text-lg font-normal opacity-80">%</span>
+                                    </div>
+                                  </div>
+                                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Metrics Grid */}
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg p-2 border border-red-100">
+                                  <div className="text-[10px] text-red-600 font-medium uppercase">NOx Emissions</div>
+                                  <div className="text-lg font-bold text-red-700">
+                                    {blend.boiler_predictions?.nox ? Number(blend.boiler_predictions.nox).toFixed(2) : '-'}
+                                    <span className="text-xs font-normal text-red-500 ml-1">ppm</span>
+                                  </div>
+                                </div>
+                                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-2 border border-amber-100">
+                                  <div className="text-[10px] text-amber-600 font-medium uppercase">GCV (WA)</div>
+                                  <div className="text-lg font-bold text-amber-700">
+                                    {blend.boiler_predictions?.gcv_wa ? Number(blend.boiler_predictions.gcv_wa).toFixed(0) : '-'}
+                                    <span className="text-xs font-normal text-amber-500 ml-1">kcal/kg</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* UBC Metrics */}
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                <div className="bg-gray-100 rounded-lg p-2">
+                                  <div className="text-[10px] text-gray-500 font-medium">UBC in Bottom Ash</div>
+                                  <div className="text-lg font-bold text-gray-800">
+                                    {blend.boiler_predictions?.ubc_ba ? Number(blend.boiler_predictions.ubc_ba).toFixed(2) : '-'}%
+                                  </div>
+                                </div>
+                                <div className="bg-gray-100 rounded-lg p-2">
+                                  <div className="text-[10px] text-gray-500 font-medium">UBC in Fly Ash</div>
+                                  <div className="text-lg font-bold text-gray-800">
+                                    {blend.boiler_predictions?.ubc_fa ? Number(blend.boiler_predictions.ubc_fa).toFixed(2) : '-'}%
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Operating Parameters */}
+                              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-2 border border-blue-100">
+                                <div className="text-[10px] text-blue-600 font-medium uppercase mb-1">Operating Parameters</div>
+                                <div className="grid grid-cols-4 gap-1 text-center">
+                                  <div>
+                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.load ? Number(blend.boiler_params.load).toFixed(0) : '-'}</div>
+                                    <div className="text-[8px] text-blue-600">MW</div>
+                                  </div>
+                                  <div className="border-l border-blue-200">
+                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.feed_water_temp ? Number(blend.boiler_params.feed_water_temp).toFixed(0) : '-'}</div>
+                                    <div className="text-[8px] text-blue-600">°C</div>
+                                  </div>
+                                  <div className="border-l border-blue-200">
+                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.running_plant_load_factor ? Number(blend.boiler_params.running_plant_load_factor).toFixed(0) : '-'}</div>
+                                    <div className="text-[8px] text-blue-600">PLF %</div>
+                                  </div>
+                                  <div className="border-l border-blue-200">
+                                    <div className="text-sm font-bold text-blue-800">{blend.boiler_params?.air_to_fuel_ratio ? Number(blend.boiler_params.air_to_fuel_ratio).toFixed(2) : '-'}</div>
+                                    <div className="text-[8px] text-blue-600">A/F</div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-
-                          {/* Right Half: Coal Category Distribution */}
-                          <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg">
-                            <h4 className="text-sm font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                              <div className="w-5 h-5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse"></div>
-                              Coal Category Distribution
-                            </h4>
-
-                            {/* Calculate category distribution */}
-                            {(() => {
-                              const categoryDist = {};
-                              let total = 0;
-                              blend.coals.forEach((coal) => {
-                                const cat = coal.category || "Unknown";
-                                categoryDist[cat] = (categoryDist[cat] || 0) + coal.percentage;
-                                total += coal.percentage;
-                              });
-
-                              // Prepare data for visualization
-                              const chartData = Object.entries(categoryDist)
-                                .map(([category, percentage]) => ({
-                                  name: category,
-                                  value: parseFloat(percentage.toFixed(1)),
-                                  percentage: percentage,
-                                  fill: getCategoryColor(category)
-                                }))
-                                .sort((a, b) => b.value - a.value);
-
-                              return (
-                                <div className="space-y-4">
-                                  {/* Summary Stats */}
-                                  <div className="grid grid-cols-3 gap-2 mb-3">
-                                    <div className="bg-white rounded-lg p-2 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
-                                      <div className="text-xs text-gray-500">Categories</div>
-                                      <div className="text-lg font-bold text-green-600">{Object.keys(categoryDist).length}</div>
-                                    </div>
-                                    <div className="bg-white rounded-lg p-2 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
-                                      <div className="text-xs text-gray-500">Total Coals</div>
-                                      <div className="text-lg font-bold text-green-600">{blend.coals.length}</div>
-                                    </div>
-                                    <div className="bg-white rounded-lg p-2 shadow-sm border border-green-100 hover:shadow-md transition-shadow">
-                                      <div className="text-xs text-gray-500">Dominant</div>
-                                      <div className="text-xs font-bold text-green-600 truncate" title={chartData[0]?.name}>
-                                        {chartData[0]?.name}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Interactive Category Bars */}
-                                  <div className="space-y-2">
-                                    {chartData.map((item) => (
-                                      <div
-                                        key={item.name}
-                                        className="group hover:translate-x-1 transition-transform duration-200 cursor-pointer"
-                                        onMouseEnter={() => setHoveredCategory(item.name)}
-                                        onMouseLeave={() => setHoveredCategory(null)}
-                                      >
-                                        <div className="flex justify-between items-center text-sm mb-1">
-                                          <div className="flex items-center gap-2">
-                                            <div
-                                              className="w-3 h-3 rounded-full shadow-sm ring-2 ring-white"
-                                              style={{ backgroundColor: item.fill }}
-                                            ></div>
-                                            <span className="font-semibold text-gray-700">{item.name}</span>
-                                          </div>
-                                          <span className="text-lg font-bold text-gray-900 group-hover:text-green-600 transition-colors">
-                                            {item.value}%
-                                          </span>
-                                        </div>
-                                        <div className="relative w-full h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
-                                          <div
-                                            className="absolute h-full rounded-full transition-all duration-500 ease-out shadow-sm"
-                                            style={{
-                                              width: `${item.value}%`,
-                                              background: `linear-gradient(90deg, ${item.fill}, ${adjustBrightness(item.fill, 20)})`
-                                            }}
-                                          >
-                                            <div className="absolute inset-0 bg-white opacity-20 animate-shimmer"></div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-
-                                  {/* Category Legend */}
-                                  <div className="mt-3 pt-3 border-t border-green-200">
-                                    <div className="text-xs text-gray-500 mb-2">Category Key</div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {['HCC', 'SHCC', 'HFCC', 'PCI', 'WC'].map((cat) => (
-                                        <div key={cat} className="flex items-center gap-1 px-2 py-1 bg-white rounded-full text-xs border border-gray-200">
-                                          <div
-                                            className="w-2 h-2 rounded-full"
-                                            style={{ backgroundColor: getCategoryColor(cat) }}
-                                          ></div>
-                                          <span className="font-medium text-gray-600">{cat}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  {/* Cost Display */}
-                                  <div className="mt-4 pt-3 border-t border-green-200">
-                                    <div className="flex items-center justify-between bg-white/60 p-3 rounded-lg border border-green-100">
-                                      <div>
-                                        <div className="text-xs text-gray-500 font-medium uppercase tracking-wider">Estimated Cost</div>
-                                        <div className="text-2xl font-bold text-emerald-700">
-                                          ₹{blend.total_cost?.toFixed(2)}
-                                          <span className="text-sm font-normal text-gray-500 ml-1">/ ton</span>
-                                        </div>
-                                      </div>
-                                      <div className="p-2 bg-emerald-100 rounded-full">
-                                        <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
+                          )}
                         </div>
+
                       </div>
                     );
                   }

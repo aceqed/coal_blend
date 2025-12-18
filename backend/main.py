@@ -39,6 +39,8 @@ def normalize_coal_name(name):
     return re.sub(r"\s+", " ", s).strip()
 # Import the new GA components
 from genetic_algorithm import FastCoalPredictor, VectorizedGA
+from boiler_inference import BoilerPredictor
+from boiler_ga import BoilerGA
 
 # Legacy predictor for single prediction endpoint (optional)
 try:
@@ -46,7 +48,15 @@ try:
     coal_blend_predictor = CoalBlendPredictor()
 except ImportError:
     logging.warning("Legacy CoalBlendPredictor not found. /predict endpoint might fail.")
+    logging.warning("Legacy CoalBlendPredictor not found. /predict endpoint might fail.")
     coal_blend_predictor = None
+
+try:
+    boiler_models_dir = os.path.join(os.path.dirname(__file__), "Boiler_effi_pred")
+    boiler_predictor = BoilerPredictor(boiler_models_dir)
+except Exception as e:
+    logging.error(f"Failed to initialize BoilerPredictor: {e}")
+    boiler_predictor = None
 
 load_dotenv()
 
@@ -70,6 +80,39 @@ def get_db():
 
 # FastAPI app
 app = FastAPI(title="User Authentication API")
+
+@app.on_event("startup")
+def recover_running_simulations():
+    """
+    On server startup, reset any simulations stuck in 'running' status to 'failed'.
+    This prevents the app from being bricked if the server crashes during a GA run.
+    """
+    db = SessionLocal()
+    try:
+        stuck_simulations = db.query(models.Simulation).filter(
+            models.Simulation.status == "running"
+        ).all()
+        
+        for sim in stuck_simulations:
+            sim.status = "failed"
+            # Add an update entry to inform the user
+            update = models.SimulationUpdate(
+                simulation_id=sim.id,
+                status="failed",
+                progress=0.0,
+                message="Server restarted. Simulation was interrupted. Please re-run."
+            )
+            db.add(update)
+            logger.info(f"Recovered stuck simulation ID {sim.id}: marked as failed.")
+        
+        if stuck_simulations:
+            db.commit()
+            logger.info(f"Recovered {len(stuck_simulations)} stuck simulation(s).")
+    except Exception as e:
+        logger.error(f"Error recovering stuck simulations: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 # Add CORS middleware with specific settings
 app.add_middleware(
@@ -320,10 +363,25 @@ async def predict_blend(prediction_input: schemas.PredictionInput, db: Session =
     }
     print("predicted_coke_properties",predicted_coke_properties)
 
+    # Run Boiler Prediction if params properly provided
+    boiler_predictions_result = None
+    if prediction_input.boiler_params and boiler_predictor:
+        try:
+            # We need the full coal properties list for the weighted average calculation
+            coal_props_list = list(coal_properties.values())
+            boiler_predictions_result = boiler_predictor.predict(
+                prediction_input.blends, 
+                prediction_input.boiler_params, 
+                coal_props_list
+            )
+        except Exception as e:
+            logging.error(f"Boiler prediction failed: {e}")
+
     return schemas.PredictionOutput(
         blend_properties=enhanced_blend_properties,
         predicted_coke_properties=predicted_coke_properties,
-        predicted_coal_properties=predicted_coal_properties
+        predicted_coal_properties=predicted_coal_properties,
+        boiler_predictions=boiler_predictions_result
     )
 
 # Simulation Routes
@@ -590,14 +648,141 @@ async def run_optimization(simulation_id: int, simulation_data: dict, db: Sessio
     finally:
         running_simulations.pop(simulation_id, None)
 
+async def run_boiler_optimization(simulation_id: int, simulation_data: dict, db: Session):
+    try:
+        logger.info(f"Starting Boiler GA optimization for simulation {simulation_id}")
+        running_simulations[simulation_id] = {"stop_requested": False, "start_time": datetime.now()}
+
+        db_simulation = db.query(models.Simulation).filter_by(id=simulation_id).first()
+        if not db_simulation: return
+        db_simulation.status = "running"
+        db.commit()
+
+        if not boiler_predictor:
+             raise Exception("Boiler Predictor not initialized. Cannot run Boiler GA.")
+             
+        # 1. Fetch ALL coal properties (needed for weighted averages in GA)
+        coal_data = db.query(models.CoalProperties).all()
+        # Convert to list of dicts/objects that BoilerPredictor expects
+        # BoilerPredictor.calculate_weighted_average expects objects with attributes or dicts
+        # We will usage the SQL objects directly or convert if needed.
+        # Let's ensure we have DFs for the GA random selection if needed
+        
+        # 2. Initialize BoilerGA
+        # We need a dataframe for the 'coal_df' argument to know names for random selection
+        formatted_coals = []
+        for coal in coal_data:
+            formatted_coals.append({
+                "Coal_Name": coal.coal_name,
+                # Add other props if needed by boiler_ga internal logic (it seems to only need names for selection)
+            })
+        coal_df_minimal = pd.DataFrame(formatted_coals)
+
+        ga = BoilerGA(boiler_predictor, pop_size=30, generations=15, coal_df=coal_df_minimal)
+
+        # 3. Define Callback for Updates
+        def progress_callback(gen, best_score, best_ind):
+            # Check for stop request
+            if simulation_id in running_simulations and running_simulations[simulation_id].get("stop_requested"):
+                raise Exception("Simulation stopped by user") # Will be caught by outer try/except
+
+            progress = (gen / ga.generations) * 100
+            
+            # Update Simulation Status
+            sim_update = models.SimulationUpdate(
+                simulation_id=simulation_id,
+                status="running",
+                progress=progress,
+                message=f"Generation {gen}/{ga.generations} - Best Score: {best_score:.4f}"
+            )
+            db.add(sim_update)
+            db.commit()
+
+        # 4. Evolve
+        # Pass the full coal objects list to evolve -> fitness -> predict -> calculate_weighted_average
+        best_solution = ga.evolve(coal_data, callback=progress_callback)
+
+        # 5. Get Top 5 Blends and store them
+        top_blends = ga.get_top_blends(coal_data, n=5)
+        
+        for blend in top_blends:
+            composition = blend["composition"]
+            bp = blend["boiler_params"]
+            preds = blend["predictions"]
+            w_props = blend["weighted_props"]
+            
+            # Build boiler_params with nested predictions  
+            boiler_params = {
+                "load": bp["load"],
+                "feed_water_temp": bp["feed_water_temp"],
+                "running_plant_load_factor": bp["running_plant_load_factor"],
+                "air_to_fuel_ratio": bp["air_to_fuel_ratio"],
+                "predictions": {
+                    "efficiency": preds.get("boiler_efficiency", 0),
+                    "nox": preds.get("nox", 0),
+                    "ubc_ba": preds.get("ubc_ba", 0),
+                    "ubc_fa": preds.get("ubc_fa", 0),
+                    "gcv_wa": preds.get("gcv_wa", 0)
+                }
+            }
+            
+            rec = models.SimulationCoalRecommendations(
+                simulation_id=simulation_id,
+                coal_percentages=composition,
+                total_cost=0,
+                boiler_params=boiler_params,
+                predicted_ash=w_props['Ash'],
+                predicted_vm=w_props['VM'],
+                predicted_fc=w_props['FC'],
+                predicted_cri=w_props['CRI'],
+                predicted_csr=w_props['CSR'],
+                predicted_csn=0,
+                predicted_ash_final=w_props['Ash'],
+                predicted_vm_final=w_props['VM'],
+                NO_Emissions=preds.get("nox", 0),
+            )
+            db.add(rec)
+        
+        db_simulation.status = "completed"
+        db.commit()
+
+    except Exception as e:
+        logger.error(f"Error in boiler optimization process: {str(e)}")
+        logger.error(traceback.format_exc())
+        db_simulation = db.query(models.Simulation).filter_by(id=simulation_id).first()
+        if db_simulation:
+            db_simulation.status = "failed"
+            db_simulation.error_message = str(e)
+            db.commit()
+    finally:
+        running_simulations.pop(simulation_id, None)
+
+
 @app.post("/simulation/{simulation_id}/start")
 async def start_optimization(simulation_id: int, simulation_data: dict, db: Session = Depends(get_db)):
+    # Check type of simulation requested? For now we assume standard unless specified?
+    # Or we can add a new endpoint for boiler.
+    # The previous code for /start is standard GA.
+    # We'll leave it as is and add a NEW endpoint for boiler.
     try:
         asyncio.create_task(run_optimization(simulation_id, simulation_data, db))
         return {"message": "Optimization started"}
     except Exception as e:
         logger.error(f"Error starting optimization: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/simulation/{simulation_id}/start_boiler")
+async def start_boiler_optimization(simulation_id: int, db: Session = Depends(get_db)):
+    try:
+        # We don't need extensive simulation_data for this one as it uses its own logic (load/temp ranges are hardcoded/random in GA)
+        # Or we could pass them.
+        simulation_data = {} 
+        asyncio.create_task(run_boiler_optimization(simulation_id, simulation_data, db))
+        return {"message": "Boiler Optimization started"}
+    except Exception as e:
+        logger.error(f"Error starting boiler optimization: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/simulations", response_model=List[schemas.SimulationResponse])
 async def get_simulations(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
@@ -624,6 +809,7 @@ async def get_simulations(db: Session = Depends(get_db), current_user: models.Us
                             "predicted_ash": rec.predicted_ash, "predicted_vm": rec.predicted_vm, "predicted_fc": rec.predicted_fc,
                             "predicted_cri": rec.predicted_cri, "predicted_csr": rec.predicted_csr, "total_cost": rec.total_cost,
                             "predicted_csn": rec.predicted_csn, "predicted_ash_final": rec.predicted_ash_final, "predicted_vm_final": rec.predicted_vm_final,
+                            "boiler_params": rec.boiler_params,
                             "created_at": rec.created_at if hasattr(rec, 'created_at') else None,
                             "updated_at": rec.updated_at if hasattr(rec, 'updated_at') else None
                         })
@@ -662,6 +848,7 @@ async def get_simulation(simulation_id: int, db: Session = Depends(get_db), curr
                         "predicted_ash": rec.predicted_ash, "predicted_vm": rec.predicted_vm, "predicted_fc": rec.predicted_fc,
                         "predicted_cri": rec.predicted_cri, "predicted_csr": rec.predicted_csr, "total_cost": rec.total_cost,
                         "predicted_csn": rec.predicted_csn, "predicted_ash_final": rec.predicted_ash_final, "predicted_vm_final": rec.predicted_vm_final,
+                        "boiler_params": rec.boiler_params,
                         "created_at": rec.created_at if hasattr(rec, 'created_at') else None,
                         "updated_at": rec.updated_at if hasattr(rec, 'updated_at') else None
                     })
@@ -693,6 +880,9 @@ async def get_simulations_batch(
         
         if not ids:
             return []
+        
+        # Force fresh read from database (fixes multi-worker SQLite caching issue)
+        db.expire_all()
             
         # Query all requested simulations that belong to the current user
         simulations = (
@@ -707,7 +897,7 @@ async def get_simulations_batch(
         # Format the response
         result = []
         for sim in simulations:
-            # Get the latest status update
+            # Get the latest status update for progress/message info
             latest_update = (
                 db.query(models.SimulationUpdate)
                 .filter(models.SimulationUpdate.simulation_id == sim.id)
@@ -715,14 +905,14 @@ async def get_simulations_batch(
                 .first()
             )
             
-            # Prepare the simulation data
+            # Prepare the simulation data - use sim.status directly for accurate status
             sim_data = {
                 "id": sim.id,
                 "name": sim.scenario_name,
                 "description": sim.scenario_description,
-                "status": latest_update.status if latest_update else sim.status,
+                "status": sim.status,  # Use simulation status directly, not from updates
                 "created_at": sim.generated_date.isoformat(),
-                "updated_at": sim.generated_date.isoformat(),  # Using generated_date as updated_at for now
+                "updated_at": sim.generated_date.isoformat(),
                 "progress": latest_update.progress if latest_update else 0,
                 "message": latest_update.message if latest_update else ""
             }
